@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+Display:ital,wdth,wght@0,62.5..100,400;1,62.5..100,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" crossorigin>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -134,6 +135,8 @@
     visibility: hidden; transition: visibility 0s linear .7s;
   }
   .slide.is-active { visibility: visible; transition-delay: 0s; }
+  /* the text fades with the scroll position, never on a timer (--txt set every frame) */
+  .slide { opacity: var(--txt, 1); }
   .slide.is-active a, .slide.is-active button { pointer-events: auto; }
 
   .label {
@@ -260,15 +263,21 @@
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none;
     height: calc(100svh - var(--top) - var(--free-q, 400px) + 90px);
     background: linear-gradient(rgba(5, 5, 6, 0), rgba(5, 5, 6, .9) 90px, rgba(5, 5, 6, .96));
-    opacity: 0; transition: opacity .8s var(--ease);
+    opacity: var(--scrim, 0);
   }
-  .scrim-on .scrim { opacity: 1; }
 
   /* ---------- Wasl window (real screenshot) ---------- */
   .window {
     position: relative; margin: 0 0 clamp(18px, 4vh, 40px); pointer-events: none;
     width: clamp(140px, min(24vw, 30vh), 360px);
     opacity: var(--w-o, 0);
+  }
+  @media (min-width: 761px) and (min-height: 501px) {
+    .window {
+      position: fixed; margin: 0; right: calc(var(--pad) + 72px); top: 50%;
+      width: clamp(300px, min(38vw, (100svh - 240px) * 1.3), 680px);
+      transform: translate3d(0, -46%, 0);
+    }
   }
   .mac { perspective: 1100px; perspective-origin: 50% -35%; }
   .mac-lid {
@@ -552,7 +561,7 @@
             </div>
             <div class="mac-win">
               <div class="mac-titlebar" aria-hidden="true"><i class="r"></i><i class="y"></i><i class="g"></i><span>Wasl</span></div>
-              <img src="assets/wasl-home.png" alt="Wasl desktop app, main screen" data-i18n-attr="alt:a.waslAlt" width="2200" height="1400" loading="lazy" decoding="async">
+              <img src="assets/wasl-home.webp" alt="Wasl desktop app, main screen" data-i18n-attr="alt:a.waslAlt" width="2200" height="1400" loading="lazy" decoding="async">
             </div>
             <div class="mac-dock" aria-hidden="true"><i></i><i></i><i class="wasl"></i><i></i><i></i></div>
           </div>
@@ -566,7 +575,7 @@
     <div class="copy">
       <p class="wide fade" data-i18n="wasl.p">Wasl connects macOS and Windows into one workspace — shared cursor, clipboard, files, audio and deeper cross-device interaction.</p>
       <div class="shot-inline wasl-inline fade d2">
-        <img src="assets/wasl-home.png" alt="Wasl desktop app, main screen" data-i18n-attr="alt:a.waslAlt" width="2200" height="1400" loading="lazy" decoding="async">
+        <img src="assets/wasl-home.webp" alt="Wasl desktop app, main screen" data-i18n-attr="alt:a.waslAlt" width="2200" height="1400" loading="lazy" decoding="async">
         <p class="meta" data-i18n="wasl.real">Real app · v0.9</p>
       </div>
       <div class="actions fade d2">
@@ -595,7 +604,7 @@
     <i class="key k-action" aria-hidden="true"></i><i class="key k-up" aria-hidden="true"></i><i class="key k-down" aria-hidden="true"></i><i class="key k-power" aria-hidden="true"></i><i class="key k-cam" aria-hidden="true"></i>
     <div class="iphone-back" aria-hidden="true"></div>
     <div class="iphone-screen">
-      <img src="assets/qayd-home.png" alt="Qayd home screen, demo data" data-i18n-attr="alt:a.qaydAlt" width="780" height="1688" decoding="async">
+      <img src="assets/qayd-home.webp" alt="Qayd home screen, demo data" data-i18n-attr="alt:a.qaydAlt" width="780" height="1688" decoding="async">
       <span class="island" aria-hidden="true"></span>
     </div>
   </div>
@@ -796,7 +805,13 @@ const counter = $('.counter b');
 const progressEl = $('.progress');
 let target = 0, current = 0, stage = -1, textStage = -2;
 // a slide's text shows only near its stage; around it the devices animate on their own
-const TEXT_WINDOW = 0.065;
+const T = {
+  text: [0.04, 0.068],     // text fully in → gone
+  scrim: [0.055, 0.115],    // the darkening under the text lingers a little longer
+  dev: [0.075, 0.15],      // device standing → away (starts leaving while the scrim is still fading)
+  devFade: [0.14, 0.166],  // device visible → gone, right before the halfway point
+};
+const TEXT_WINDOW = T.text[1] + 0.002;
 
 function maxScroll() { return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
 function readScroll() { target = Math.min(1, Math.max(0, scrollY / maxScroll())); }
@@ -806,7 +821,6 @@ function setText(i) {
   if (i === textStage) return;
   textStage = i;
   slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
-  document.body.classList.toggle('scrim-on', isMobile && i === 1);
 }
 function setStage(i) {
   if (i === stage) return;
@@ -890,7 +904,7 @@ const CAM = {
   shyM: [0.19, 0.25, 0.19, 0.21],   // mobile: object in the upper half
   // where a device takes the frame, the sculpture glides off the top and the room dims
   awayM: [0, 1, 1, 0],               // phones: iPhone and MacBook both need the space
-  awayS: [0, 0, 1, 0],               // short landscape: only the MacBook overlaps it
+  awayS: [0, 0, 1, 0],               // wider screens: only the MacBook takes its place
   env: [0.32, 0.4, 0.46, 0.36],
   rough: [0.4, 0.36, 0.28, 0.32],
   keyI: [2.5, 2.7, 1.8, 2.1],
@@ -1104,7 +1118,7 @@ function createGL() {
   const devScene = new THREE.Scene();
   devScene.environment = scene.environment;
   const DEV_D = 12;
-  const devCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  const devCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);   // view offset set per frame
   devCam.position.set(0, 0, DEV_D);
   const devKey = new THREE.DirectionalLight(0xffffff, 2.4); devKey.position.set(-2.5, 3, 5);
   const devRim = new THREE.DirectionalLight(0xffffff, 2.2); devRim.position.set(3.5, 1.5, -3);
@@ -1180,9 +1194,10 @@ function createGL() {
 
   /* MacBook (base width = 1) */
   const BW = 1, BD = 0.69, BT = 0.034, LH = 0.655, LT = 0.018;
-  const alu = phys({ color: 0x3f4247, metalness: 1, roughness: 0.4, envMapIntensity: 0.75 });
+  // Sky Blue, the MacBook Air (M4) finish: a pale metallic blue that fits Wasl's palette
+  const alu = phys({ color: 0x8fa9c4, metalness: 1, roughness: 0.34, envMapIntensity: 0.75 });
   const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75 });
-  const padMat = phys({ color: 0x34373c, metalness: 0.9, roughness: 0.3 });
+  const padMat = phys({ color: 0x86a0ba, metalness: 1, roughness: 0.26 });
   const macScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
   const macMats = [alu, deckMat, padMat, macScreenMat];
 
@@ -1194,13 +1209,13 @@ function createGL() {
   const kb = document.createElement('canvas'); kb.width = 1024; kb.height = 380;
   {
     const g = kb.getContext('2d');
-    g.fillStyle = '#0c0d10'; g.fillRect(0, 0, 1024, 380);
+    g.clearRect(0, 0, 1024, 380);   // body colour shows between the black keys
     const rows = [14, 14, 14, 13, 12], kh = 380 / 6.2;
     rows.forEach((n, r) => {
       const kw = 1024 / n;
-      for (let i = 0; i < n; i++) { g.fillStyle = '#1b1d22'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
+      for (let i = 0; i < n; i++) { g.fillStyle = '#121317'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
     });
-    g.fillStyle = '#1b1d22'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
+    g.fillStyle = '#121317'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
   }
   deckMat.map = canvasTex(kb);
   const deck = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.31).rotateX(-Math.PI / 2), deckMat);
@@ -1274,8 +1289,8 @@ function createGL() {
   langHooks.push(d => { macDict = d; drawMacScreen(); });
   drawMacScreen();
   document.fonts?.ready.then(drawMacScreen);
-  loadImg('assets/wasl-home.png').then(img => { waslImg = img; drawMacScreen(); });
-  loadImg('assets/qayd-home.png').then(img => {
+  loadImg('assets/wasl-home.webp').then(img => { waslImg = img; drawMacScreen(); });
+  loadImg('assets/qayd-home.webp').then(img => {
     if (!img) return;
     const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement('canvas');
     c.width = w; c.height = h;
@@ -1291,44 +1306,45 @@ function createGL() {
   const setOpacity = (mats, o) => { for (const m of mats) m.opacity = o; };
   function placeDevices(s) {
     const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
-    const toX = px => (px - W / 2) * wpp, toY = px => (H / 2 - px) * wpp;
+    const R = devRects.phone, M = devRects.mac, dq = s.p - 1 / 3, dw = s.p - 2 / 3;
+    const ease = d => reduce ? +(Math.abs(d) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(d));
+    const fade = d => 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(d));
+    // both models sit at the origin and the lens is shifted onto their box, so each is seen head-on
+    const lookAt = r => devCam.setViewOffset(W, H, W / 2 - (r.left + r.width / 2), H / 2 - (r.top + r.height / 2), W, H);
 
     // iPhone: one axis only. It rises straight up leaning slightly towards the viewer, like a book being stood up,
-    // and leaves the same way leaning back; nothing turns sideways
-    const R = devRects.phone, dq = s.p - 1 / 3;
-    const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(0.095, 0.16, Math.abs(dq));
-    const oq = 1 - smooth(0.14, 0.166, Math.abs(dq));
+    // and leaves the same way leaning back
+    const aq = ease(dq), oq = fade(dq);
     phonePivot.visible = !!R && R.width > 0 && oq > 0.003;
     if (phonePivot.visible) {
       const k = R.width * wpp, dir = dq < 0 ? 1 : -1;
       phonePivot.scale.setScalar(k);
-      phonePivot.position.set(toX(R.left + R.width / 2), toY(R.bottom) - aq * R.height * wpp * 0.6, 0);
+      phonePivot.position.set(0, -R.height / 2 * wpp - aq * R.height * wpp * 0.6, 0);
       phonePivot.rotation.set(dir * 0.42 * aq, 0, 0);
       setOpacity(phoneMats, oq);
     }
 
-    // MacBook: the lid closes whenever it leaves, in either direction
-    const M = devRects.mac, dw = s.p - 2 / 3;
-    const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(0.095, 0.16, Math.abs(dw));
-    const ow = 1 - smooth(0.14, 0.166, Math.abs(dw));
+    // MacBook: the body stays level; only the lid moves, closing whenever it leaves
+    const aw = ease(dw), ow = fade(dw);
     mac.visible = !!M && M.width > 0 && ow > 0.003;
     if (mac.visible) {
-      // desktop/landscape: fit the box height too (the model is ~0.9 of its width tall)
-      const k = (isMobile ? M.width * 1.06 : Math.min(M.width * 0.84, M.height * 1.05)) * wpp;
+      const k = (isMobile ? M.width * 1.06 : H <= 500 ? Math.min(M.width * 0.84, M.height * 1.05) : M.width * 0.88) * wpp;
       mac.scale.setScalar(k);
-      // the open model spans about -0.12…0.79 of its width vertically: centre that span in the box
-      mac.position.set(toX(M.left + M.width / 2), toY(M.top + M.height / 2) - 0.34 * k - aw * M.height * wpp * 0.15, 0);
-      mac.rotation.set(0.34, 0, 0);   // the body stays level; only the lid moves
+      // the open model spans about -0.12…0.79 of its width vertically: centre that span on the box
+      mac.position.set(0, -0.34 * k - aw * M.height * wpp * 0.15, 0);
+      mac.rotation.set(0.3, 0, 0);
       lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
       setOpacity(macMats, ow);
     }
+    const active = Math.abs(dq) < Math.abs(dw) ? R : M;
+    if (active) lookAt(active);
     devKey.color.copy(key.color); devRim.color.copy(rim.color);
   }
 
-  let W = 1, H = 1;
+  let W = 1, H = 1, dprScale = 1;
   function resize(w, h) {
     W = w; H = h;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 2 : 1.75));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2) * dprScale);
     renderer.setSize(w, h);
     camera.aspect = w / h;
     devCam.aspect = w / h; devCam.updateProjectionMatrix();
@@ -1349,7 +1365,7 @@ function createGL() {
     camera.position.set(Math.sin(ang) * r, h, Math.cos(ang) * r);
     camera.lookAt(origin);
     const sx = isMobile ? 0 : mixN(CAM.shx, i, t);
-    const away = isMobile ? mixN(CAM.awayM, i, t) : H <= 500 ? mixN(CAM.awayS, i, t) : 0;
+    const away = mixN(isMobile ? CAM.awayM : CAM.awayS, i, t);
     const sy = (isMobile ? mixN(CAM.shyM, i, t) : mixN(CAM.shy, i, t)) + away * 0.85;
     camera.setViewOffset(W, H, -sx * W, sy * H, W, H);
 
@@ -1383,7 +1399,7 @@ function createGL() {
     proj.copy(origin).project(camera);
     u.uGlow.value.set(proj.x * 0.5 + 0.5, proj.y * 0.5 + 0.5);
     // the light stays behind the device while the sculpture is away
-    u.uGlow.value.lerp(glowAt.set(isMobile ? 0.5 : 0.78, isMobile ? 0.66 : 0.5), away);
+    u.uGlow.value.lerp(glowAt.set(isMobile ? 0.5 : 0.72, isMobile ? 0.66 : 0.5), away);
     u.uDim.value = away * 0.32;
 
     // particles
@@ -1401,7 +1417,12 @@ function createGL() {
     if (phonePivot.visible || mac.visible) { renderer.clearDepth(); renderer.render(devScene, devCam); }
   }
 
-  return { resize, render };
+  // drops resolution a notch when a device can't keep ~40 fps
+  function degrade() {
+    if (dprScale <= 0.6) return false;
+    dprScale -= 0.2; resize(W, H); return true;
+  }
+  return { resize, render, degrade };
 }
 
 let gl = null;
@@ -1435,7 +1456,11 @@ function setVar(name, v) {
   if (varCache[name] !== s) { varCache[name] = s; root.style.setProperty(name, s); }
 }
 
+let slowFrames = 0, frameCheckAt = 0;
 function tick(now) {
+  // performance watchdog: sustained slow frames lower the render resolution
+  if (gl && now - last > 25 && now - last < 200) slowFrames++;
+  if (now > frameCheckAt) { if (slowFrames > 45) gl?.degrade(); slowFrames = 0; frameCheckAt = now + 2000; }
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   state.time += dt;
@@ -1454,19 +1479,22 @@ function tick(now) {
 
   const near = Math.min(3, Math.round(current * 3));
   setStage(near);
-  setText(Math.abs(current - near / 3) < TEXT_WINDOW ? near : -1);
+  const dn = Math.abs(current - near / 3);
+  setText(dn < TEXT_WINDOW ? near : -1);
+  setVar('--txt', 1 - smooth(T.text[0], T.text[1], dn));
+  setVar('--scrim', isMobile ? 1 - smooth(T.scrim[0], T.scrim[1], Math.abs(current - 1 / 3)) : 0);
   progressEl.style.setProperty('--p', current.toFixed(4));
   document.body.classList.toggle('scrolled', target > 0.015);
 
   // devices: iPhone around stage 1, MacBook around stage 2
   const dq = current - 1 / 3, dw = current - 2 / 3;
-  const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(0.095, 0.16, Math.abs(dq));
-  const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(0.095, 0.16, Math.abs(dw));
+  const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(dq));
+  const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(dw));
   setVar('--q-rot', (dq < 0 ? -88 : 88) * aq);
   setVar('--q-y', aq);
-  setVar('--q-o', 1 - smooth(0.14, 0.166, Math.abs(dq)));
+  setVar('--q-o', 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dq)));
   setVar('--w-rot', -88 * aw);
-  setVar('--w-o', 1 - smooth(0.14, 0.166, Math.abs(dw)));
+  setVar('--w-o', 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dw)));
 
   const [i, t] = stageMix(current);
   const h = '#' + mixC(PAL.accent, i, t, accTmp).getHexString();
@@ -1488,6 +1516,12 @@ function tick(now) {
 readScroll();
 current = target;
 (document.fonts?.ready || Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(tick)));
+</script>
+<script>
+  // offline cache for the page, Three.js, fonts and screenshots (sw.js); the page itself is always checked for updates
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 </script>
 </body>
 </html>
