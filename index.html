@@ -1137,9 +1137,10 @@ function createGL() {
 
   /* iPhone (proportions of a current Pro: 71.9 × 150 × 8.25 mm; width = 1) */
   const PW = 1, PH = 2.083, PT = 0.118, PR = 0.17;
-  const titanium = phys({ color: 0x6f7278, metalness: 1, roughness: 0.34, envMapIntensity: 0.8 });
+  // Dark Cherry, the iPhone 18 Pro finish: wine red with a hint of purple
+  const titanium = phys({ color: 0x5c1626, metalness: 1, roughness: 0.32, envMapIntensity: 0.9 });
   const glassBlack = phys({ color: 0x030304, metalness: 0.2, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 });
-  const backGlass = phys({ color: 0x34373d, metalness: 0.35, roughness: 0.5, clearcoat: 0.6, clearcoatRoughness: 0.4 });
+  const backGlass = phys({ color: 0x3e0f1a, metalness: 0.3, roughness: 0.55, clearcoat: 0.5, clearcoatRoughness: 0.45 });
   const lensGlass = phys({ color: 0x05060a, metalness: 0.4, roughness: 0.08, clearcoat: 1 });
   const phoneScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
   const phoneMats = [titanium, glassBlack, backGlass, lensGlass, phoneScreenMat];
@@ -1173,7 +1174,7 @@ function createGL() {
   const keyGeo = new THREE.BoxGeometry(0.022, 1, 0.05);
   [[-1, 0.62, 0.09], [-1, 0.4, 0.2], [-1, 0.14, 0.2], [1, 0.42, 0.3], [1, -0.18, 0.17]].forEach(([side, y, h]) => {
     const k = new THREE.Mesh(keyGeo, titanium);
-    k.scale.y = h; k.position.set(side * (PW / 2 + 0.004), y, 0);
+    k.scale.y = h; k.position.set(side * (PW / 2 - 0.004), y, 0);
     phone.add(k);
   });
 
@@ -1292,7 +1293,8 @@ function createGL() {
     const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
     const toX = px => (px - W / 2) * wpp, toY = px => (H / 2 - px) * wpp;
 
-    // iPhone: rises face-down from below, stands up, then tips over backwards (back side down) and sinks
+    // iPhone: one axis only. It rises straight up leaning slightly towards the viewer, like a book being stood up,
+    // and leaves the same way leaning back; nothing turns sideways
     const R = devRects.phone, dq = s.p - 1 / 3;
     const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(0.095, 0.16, Math.abs(dq));
     const oq = 1 - smooth(0.14, 0.166, Math.abs(dq));
@@ -1300,8 +1302,8 @@ function createGL() {
     if (phonePivot.visible) {
       const k = R.width * wpp, dir = dq < 0 ? 1 : -1;
       phonePivot.scale.setScalar(k);
-      phonePivot.position.set(toX(R.left + R.width / 2), toY(R.bottom) - aq * R.height * wpp * 0.3 + (reduce ? 0 : Math.sin(s.time * 0.8) * 0.01 * k), 0);
-      phonePivot.rotation.set(dir * 1.35 * aq, -0.2 + (dir > 0 ? 0.5 : -0.35) * aq + s.mx * 0.12, dir * 0.06 * aq);
+      phonePivot.position.set(toX(R.left + R.width / 2), toY(R.bottom) - aq * R.height * wpp * 0.6, 0);
+      phonePivot.rotation.set(dir * 0.42 * aq, 0, 0);
       setOpacity(phoneMats, oq);
     }
 
@@ -1316,7 +1318,7 @@ function createGL() {
       mac.scale.setScalar(k);
       // the open model spans about -0.12…0.79 of its width vertically: centre that span in the box
       mac.position.set(toX(M.left + M.width / 2), toY(M.top + M.height / 2) - 0.34 * k - aw * M.height * wpp * 0.15, 0);
-      mac.rotation.set(0.34, (dw < 0 ? 0.35 : -0.35) * aw + s.mx * 0.1, 0);
+      mac.rotation.set(0.34, 0, 0);   // the body stays level; only the lid moves
       lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
       setOpacity(macMats, ow);
     }
