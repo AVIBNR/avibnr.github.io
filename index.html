@@ -14,7 +14,8 @@
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
 } }
 </script>
 <style>
@@ -33,7 +34,16 @@
     --ease: cubic-bezier(.2, .7, .1, 1);
   }
   *, *::before, *::after { box-sizing: border-box; }
-  html { background: var(--bg); }
+  html {
+    background: var(--bg);
+    -webkit-tap-highlight-color: transparent;   /* no grey flash on tap */
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;                   /* no pull-to-refresh in the middle of the story */
+  }
+  a, button { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+  /* Lenis (smooth scroll) */
+  html.lenis, html.lenis body { height: auto; }
+  .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: var(--sans); font-weight: 300; font-size: 15px; line-height: 1.6;
@@ -79,14 +89,14 @@
   .brand { font-weight: 500; font-size: 13px; letter-spacing: .46em; margin-right: -.46em; }
   .nav { display: flex; align-items: center; gap: 14px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
   .nav a { color: var(--ink-mute); transition: color .4s var(--ease); padding: 6px 0; }
-  .nav a:hover, .nav a.is-active { color: var(--ink); }
+  .nav a.is-active { color: var(--ink); }
   .nav span { color: var(--ink-faint); }
   .cta {
     font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
     padding: 11px 20px; border: 1px solid var(--ink-faint); border-radius: 999px;
     transition: border-color .5s var(--ease), color .5s var(--ease);
   }
-  .cta:hover { border-color: var(--accent); color: var(--ink); }
+
   .menu-btn { display: none; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; padding: 10px 0; }
   .top-actions { display: flex; align-items: center; gap: 18px; }
   .lang { position: relative; }
@@ -94,7 +104,7 @@
     display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 999px;
     font-size: 11px; letter-spacing: .2em; color: var(--ink-dim); transition: color .4s var(--ease);
   }
-  .lang-btn:hover, .lang-btn[aria-expanded="true"] { color: var(--ink); }
+  .lang-btn[aria-expanded="true"] { color: var(--ink); }
   .lang-btn svg { width: 9px; height: 6px; transition: transform .4s var(--ease); }
   .lang-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
   .lang-menu {
@@ -111,7 +121,7 @@
     font-size: 13px; color: var(--ink-dim); transition: background-color .3s, color .3s;
   }
   .lang-menu button b { font-weight: 400; font-size: 10px; letter-spacing: .2em; color: var(--ink-mute); width: 22px; }
-  .lang-menu button:hover { background: rgba(241, 236, 228, .06); color: var(--ink); }
+
   .lang-menu button[aria-checked="true"] { color: var(--ink); }
   .lang-menu button[aria-checked="true"] b { color: var(--accent); }
 
@@ -189,9 +199,9 @@
     padding: 14px 24px; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); border-radius: 999px;
     transition: background-color .5s var(--ease), color .5s var(--ease);
   }
-  .btn:hover { background: var(--accent); color: var(--bg); }
+
   .link { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 0; transition: color .4s var(--ease); }
-  .link:hover { color: var(--ink); }
+
   .link::after { content: " ↑"; }
 
   .shot-inline { display: none; }
@@ -371,7 +381,7 @@
   .dot span { opacity: 0; transform: translateX(6px); transition: opacity .5s var(--ease), transform .5s var(--ease); }
   .dot.is-active { color: var(--ink); }
   .dot.is-active::after { background: var(--accent); border-color: var(--accent); }
-  .dot.is-active span, .progress:hover .dot span { opacity: 1; transform: none; }
+  .dot.is-active span { opacity: 1; transform: none; }
 
   /* ---------- footer, hint ---------- */
   .foot {
@@ -379,7 +389,7 @@
     display: flex; align-items: center; justify-content: space-between;
     font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-mute);
   }
-  .foot a:hover { color: var(--ink); }
+
   .foot b { font-weight: 400; color: var(--ink); }
   .hint {
     position: fixed; z-index: 6; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -390,6 +400,20 @@
   .hint::after { content: ""; width: 1px; height: 28px; background: linear-gradient(var(--ink-mute), transparent); animation: drip 2.4s var(--ease) infinite; transform-origin: top; }
   @keyframes drip { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
   .scrolled .hint { opacity: 0; }
+
+  /* hover styles only for mouse/trackpad: on touch they would stick after a tap */
+  @media (hover: hover) and (pointer: fine) {
+    .nav a:hover { color: var(--ink); }
+    .cta:hover { border-color: var(--accent); color: var(--ink); }
+    .lang-btn:hover { color: var(--ink); }
+    .lang-menu button:hover { background: rgba(241, 236, 228, .06); color: var(--ink); }
+    .btn:hover { background: var(--accent); color: var(--bg); }
+    .link:hover { color: var(--ink); }
+    .progress:hover .dot span { opacity: 1; transform: none; }
+    .foot a:hover { color: var(--ink); }
+  }
+  /* press feedback for touch */
+  .btn:active, .cta:active { opacity: .7; }
 
   /* ---------- cursor ---------- */
   .cursor-ring, .cursor-dot { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; border-radius: 50%; opacity: 0; will-change: transform; }
@@ -458,6 +482,7 @@
     .shot-inline .meta, #wasl .meta { font-size: 10px; }
   }
 
+  @media (pointer: coarse) { .char { filter: none; } }
   @media (prefers-reduced-motion: reduce) {
     .char, .slide.is-active .char { filter: none; transform: none; transition-duration: .4s; transition-delay: 0s; }
     .fade, .slide.is-active .fade { transform: none; transition-delay: 0s; }
@@ -636,6 +661,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import Lenis from 'lenis';
 
 /* Optional: path to your own .glb (e.g. 'assets/avibra.glb').
    It replaces the procedural sculpture; nodes named "A" and "V" (if present)
@@ -808,14 +834,29 @@ let target = 0, current = 0, stage = -1, textStage = -2;
 const T = {
   text: [0.04, 0.068],     // text fully in → gone
   scrim: [0.055, 0.115],    // the darkening under the text lingers a little longer
-  dev: [0.075, 0.15],      // device standing → away (starts leaving while the scrim is still fading)
-  devFade: [0.14, 0.166],  // device visible → gone, right before the halfway point
+  dev: [0.062, 0.162],      // device standing → away (starts leaving while the scrim is still fading)
 };
 const TEXT_WINDOW = T.text[1] + 0.002;
+// minimum time (s) a full move may take, however fast the page is scrolled
+const DUR = { device: 1.4, text: 0.7, scrim: 0.9 };
+const lin = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+const glideState = {};
+function glide(key, to, dt, dur) {
+  const v = glideState[key] ?? to, step = dt / dur;
+  return (glideState[key] = v + Math.max(-step, Math.min(step, to - v)));
+}
 
 function maxScroll() { return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
 function readScroll() { target = Math.min(1, Math.max(0, scrollY / maxScroll())); }
 addEventListener('scroll', readScroll, { passive: true });
+
+/* smooth scroll for wheel, trackpad and touch; stepped in tick() so the page and the 3D share one frame */
+let lenis = null;
+if (!reduce) {
+  try {
+    lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9, syncTouch: true, syncTouchLerp: 0.07, touchMultiplier: 1.1, autoRaf: false });
+  } catch (err) { lenis = null; }
+}
 
 function setText(i) {
   if (i === textStage) return;
@@ -830,7 +871,9 @@ function setStage(i) {
   counter.textContent = String(i + 1).padStart(2, '0');
 }
 function goTo(i) {
-  scrollTo({ top: maxScroll() * i / 3, behavior: reduce ? 'auto' : 'smooth' });
+  const top = maxScroll() * i / 3;
+  if (lenis) lenis.scrollTo(top, { duration: 2.6, easing: t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
+  else scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
   closeMenu();
 }
 document.addEventListener('click', e => {
@@ -910,7 +953,8 @@ const CAM = {
   keyI: [2.5, 2.7, 1.8, 2.1],
   rimI: [2.6, 2.3, 4.2, 3.2],
 };
-const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// smootherstep: starts and stops with zero speed and zero acceleration, so nothing snaps into motion
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * t * (t * (t * 6 - 15) + 10); };
 function stageMix(p) {
   const f = Math.min(1, Math.max(0, p)) * 3;
   const i = Math.min(2, Math.floor(f));
@@ -1194,10 +1238,10 @@ function createGL() {
 
   /* MacBook (base width = 1) */
   const BW = 1, BD = 0.69, BT = 0.034, LH = 0.655, LT = 0.018;
-  // Sky Blue, the MacBook Air (M4) finish: a pale metallic blue that fits Wasl's palette
-  const alu = phys({ color: 0x8fa9c4, metalness: 1, roughness: 0.34, envMapIntensity: 0.75 });
+  // Midnight, the darkest MacBook Air finish: near-black with a blue cast that sits in Wasl's night palette
+  const alu = phys({ color: 0x2c3442, metalness: 1, roughness: 0.36, envMapIntensity: 0.9 });
   const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75 });
-  const padMat = phys({ color: 0x86a0ba, metalness: 1, roughness: 0.26 });
+  const padMat = phys({ color: 0x252b36, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
   const macScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
   const macMats = [alu, deckMat, padMat, macScreenMat];
 
@@ -1213,9 +1257,9 @@ function createGL() {
     const rows = [14, 14, 14, 13, 12], kh = 380 / 6.2;
     rows.forEach((n, r) => {
       const kw = 1024 / n;
-      for (let i = 0; i < n; i++) { g.fillStyle = '#121317'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
+      for (let i = 0; i < n; i++) { g.fillStyle = '#08090c'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
     });
-    g.fillStyle = '#121317'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
+    g.fillStyle = '#08090c'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
   }
   deckMat.map = canvasTex(kb);
   const deck = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.31).rotateX(-Math.PI / 2), deckMat);
@@ -1306,18 +1350,16 @@ function createGL() {
   const setOpacity = (mats, o) => { for (const m of mats) m.opacity = o; };
   function placeDevices(s) {
     const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
-    const R = devRects.phone, M = devRects.mac, dq = s.p - 1 / 3, dw = s.p - 2 / 3;
-    const ease = d => reduce ? +(Math.abs(d) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(d));
-    const fade = d => 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(d));
+    const R = devRects.phone, M = devRects.mac, dq = s.story - 1 / 3, dw = s.story - 2 / 3;
     // both models sit at the origin and the lens is shifted onto their box, so each is seen head-on
     const lookAt = r => devCam.setViewOffset(W, H, W / 2 - (r.left + r.width / 2), H / 2 - (r.top + r.height / 2), W, H);
 
     // iPhone: one axis only. It rises straight up leaning slightly towards the viewer, like a book being stood up,
     // and leaves the same way leaning back
-    const aq = ease(dq), oq = fade(dq);
+    const aq = s.aq ?? 1, oq = s.oq ?? 0;
     phonePivot.visible = !!R && R.width > 0 && oq > 0.003;
     if (phonePivot.visible) {
-      const k = R.width * wpp, dir = dq < 0 ? 1 : -1;
+      const k = R.width * wpp, dir = s.dirQ ?? 1;
       phonePivot.scale.setScalar(k);
       phonePivot.position.set(0, -R.height / 2 * wpp - aq * R.height * wpp * 0.6, 0);
       phonePivot.rotation.set(dir * 0.42 * aq, 0, 0);
@@ -1325,7 +1367,7 @@ function createGL() {
     }
 
     // MacBook: the body stays level; only the lid moves, closing whenever it leaves
-    const aw = ease(dw), ow = fade(dw);
+    const aw = s.aw ?? 1, ow = s.ow ?? 0;
     mac.visible = !!M && M.width > 0 && ow > 0.003;
     if (mac.visible) {
       const k = (isMobile ? M.width * 1.06 : H <= 500 ? Math.min(M.width * 0.84, M.height * 1.05) : M.width * 0.88) * wpp;
@@ -1336,15 +1378,14 @@ function createGL() {
       lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
       setOpacity(macMats, ow);
     }
-    const active = Math.abs(dq) < Math.abs(dw) ? R : M;
-    if (active) lookAt(active);
+    return { lookAt, R, M };
     devKey.color.copy(key.color); devRim.color.copy(rim.color);
   }
 
   let W = 1, H = 1, dprScale = 1;
   function resize(w, h) {
     W = w; H = h;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2) * dprScale);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.75 : 2) * dprScale);
     renderer.setSize(w, h);
     camera.aspect = w / h;
     devCam.aspect = w / h; devCam.updateProjectionMatrix();
@@ -1413,8 +1454,12 @@ function createGL() {
     renderer.clear();
     renderer.render(bgScene, bgCam);
     renderer.render(scene, camera);
-    placeDevices(s);
-    if (phonePivot.visible || mac.visible) { renderer.clearDepth(); renderer.render(devScene, devCam); }
+    const { lookAt, R, M } = placeDevices(s);
+    const showPhone = phonePivot.visible, showMac = mac.visible;
+    if (showPhone || showMac) renderer.clearDepth();
+    // one pass per device, each with the lens centred on it, so neither is ever seen from the side
+    if (showPhone) { mac.visible = false; lookAt(R); renderer.render(devScene, devCam); mac.visible = showMac; }
+    if (showMac) { phonePivot.visible = false; lookAt(M); renderer.render(devScene, devCam); phonePivot.visible = showPhone; }
   }
 
   // drops resolution a notch when a device can't keep ~40 fps
@@ -1446,26 +1491,31 @@ mqMobile.addEventListener('change', onResize);
 onResize();
 
 /* ---------- main loop ---------- */
-const state = { p: 0, time: 0, phase: 0, energy: 0, mx: 0, my: 0 };
+const state = { p: 0, story: 0, time: 0, phase: 0, energy: 0, mx: 0, my: 0 };
+// the story (devices, text, scrim) follows the scroll with its own inertia, so a fast flick or a menu jump
+// still plays every movement over about a second instead of snapping through it
+let story = 0;
 let last = performance.now(), prevTarget = target, vel = 0, accentHex = '', firstFrame = true;
 const accTmp = new THREE.Color();
 
 const varCache = {};
+const varHost = { '--txt': $('.slides'), '--scrim': $('.scrim'), '--q-rot': $('.device'), '--q-y': $('.device'), '--q-o': $('.device'), '--w-rot': $('.window'), '--w-o': $('.window') };
 function setVar(name, v) {
   const s = v.toFixed(3);
-  if (varCache[name] !== s) { varCache[name] = s; root.style.setProperty(name, s); }
+  if (varCache[name] !== s) { varCache[name] = s; (varHost[name] || root).style.setProperty(name, s); }
 }
 
 let slowFrames = 0, frameCheckAt = 0;
 function tick(now) {
+  if (lenis) { lenis.raf(now); target = lenis.progress; }
   // performance watchdog: sustained slow frames lower the render resolution
   if (gl && now - last > 25 && now - last < 200) slowFrames++;
-  if (now > frameCheckAt) { if (slowFrames > 45) gl?.degrade(); slowFrames = 0; frameCheckAt = now + 2000; }
+  if (now > frameCheckAt) { if (slowFrames > 30) gl?.degrade(); slowFrames = 0; frameCheckAt = now + 2000; }
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   state.time += dt;
 
-  current += (target - current) * (reduce ? 1 : 1 - Math.pow(0.0015, dt));
+  current += (target - current) * (reduce ? 1 : 1 - Math.pow(lenis ? 0.012 : 0.0015, dt));
   const v = Math.abs(target - prevTarget) / Math.max(dt, 1e-3);
   prevTarget = target;
   vel += (v - vel) * (1 - Math.pow(0.02, dt));
@@ -1475,26 +1525,37 @@ function tick(now) {
   const mk = reduce ? 0 : 1 - Math.pow(0.02, dt);
   mx += ((reduce ? 0 : tmx) - mx) * (reduce ? 1 : mk);
   my += ((reduce ? 0 : tmy) - my) * (reduce ? 1 : mk);
-  state.mx = mx; state.my = my; state.p = current;
+  story += (current - story) * (reduce ? 1 : 1 - Math.pow(0.05, dt));
+  state.mx = mx; state.my = my; state.p = current; state.story = story;
 
   const near = Math.min(3, Math.round(current * 3));
   setStage(near);
-  const dn = Math.abs(current - near / 3);
-  setText(dn < TEXT_WINDOW ? near : -1);
-  setVar('--txt', 1 - smooth(T.text[0], T.text[1], dn));
-  setVar('--scrim', isMobile ? 1 - smooth(T.scrim[0], T.scrim[1], Math.abs(current - 1 / 3)) : 0);
+  // text: the visible slide stays until it has fully faded, only then the next one takes over
+  const sn = Math.min(3, Math.round(story * 3));
+  const shown = textStage >= 0 ? textStage : sn;
+  const gt = glide('t', lin(T.text[0], T.text[1], Math.abs(story - shown / 3)), dt, DUR.text);
+  if (gt > 0.999 || textStage < 0) {
+    const dn = Math.abs(story - sn / 3);
+    setText(dn < TEXT_WINDOW ? sn : -1);
+  }
+  setVar('--txt', 1 - smooth(0, 1, gt));
+  const gs = glide('s', lin(T.scrim[0], T.scrim[1], Math.abs(story - 1 / 3)), dt, DUR.scrim);
+  setVar('--scrim', isMobile ? 1 - smooth(0, 1, gs) : 0);
   progressEl.style.setProperty('--p', current.toFixed(4));
   document.body.classList.toggle('scrolled', target > 0.015);
 
-  // devices: iPhone around stage 1, MacBook around stage 2
-  const dq = current - 1 / 3, dw = current - 2 / 3;
-  const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(dq));
-  const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(T.dev[0], T.dev[1], Math.abs(dw));
-  setVar('--q-rot', (dq < 0 ? -88 : 88) * aq);
-  setVar('--q-y', aq);
-  setVar('--q-o', 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dq)));
-  setVar('--w-rot', -88 * aw);
-  setVar('--w-o', 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dw)));
+  // devices: iPhone around stage 1, MacBook around stage 2. Each move is speed-limited, then eased,
+  // and a device only fades once it has fully moved away
+  const dq = story - 1 / 3, dw = story - 2 / 3;
+  const gq = glide('q', reduce ? +(Math.abs(dq) > 0.12) : lin(T.dev[0], T.dev[1], Math.abs(dq)), dt, DUR.device);
+  const gw = glide('w', reduce ? +(Math.abs(dw) > 0.12) : lin(T.dev[0], T.dev[1], Math.abs(dw)), dt, DUR.device);
+  state.aq = smooth(0, 1, gq); state.oq = 1 - smooth(0.8, 1, gq); state.dirQ = dq < 0 ? 1 : -1;
+  state.aw = smooth(0, 1, gw); state.ow = 1 - smooth(0.8, 1, gw);
+  setVar('--q-rot', -88 * state.dirQ * state.aq);
+  setVar('--q-y', state.aq);
+  setVar('--q-o', state.oq);
+  setVar('--w-rot', -88 * state.aw);
+  setVar('--w-o', state.ow);
 
   const [i, t] = stageMix(current);
   const h = '#' + mixC(PAL.accent, i, t, accTmp).getHexString();
@@ -1514,7 +1575,7 @@ function tick(now) {
 }
 
 readScroll();
-current = target;
+current = story = target;
 (document.fonts?.ready || Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(tick)));
 </script>
 <script>
