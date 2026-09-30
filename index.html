@@ -197,23 +197,51 @@
   .device {
     position: fixed; z-index: 4; margin: 0; pointer-events: none;
     right: calc(var(--pad) + 8vw); top: 50%;
-    width: clamp(190px, 15.5vw, 260px);
+    width: clamp(110px, min(15.5vw, (100svh - 190px) * .45), 260px);
     opacity: 0; filter: blur(10px);
     transform: translate3d(0, -44%, 0) rotate(-2.5deg) scale(.97);
     transition: opacity .8s var(--ease), filter .9s var(--ease), transform 1.4s var(--ease);
   }
   body[data-stage="1"] .device { opacity: 1; filter: none; transform: translate3d(0, -50%, 0) rotate(-2.5deg); transition-delay: .25s; }
   .frame {
-    padding: 7px; border-radius: 36px;
+    position: relative; padding: 7px; border-radius: 36px;
     background: linear-gradient(160deg, #2b2621 0%, #0e0d0c 46%, #1b1814 100%);
     box-shadow: 0 50px 90px -30px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(255, 255, 255, .07);
   }
   .frame img { display: block; width: 100%; height: auto; border-radius: 29px; }
+  .zoom-btn { position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none; cursor: zoom-in; }
+  body[data-stage="1"] .device .zoom-btn, .slide.is-active .zoom-btn { pointer-events: auto; }
+  .zoom-btn::after {
+    content: ""; position: absolute; right: -10px; bottom: -10px; width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(10, 10, 12, .72) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f1ece4' stroke-width='1.4'%3E%3Cpath d='M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7'/%3E%3C/svg%3E") center / 15px no-repeat;
+    border: 1px solid var(--ink-faint); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: border-color .4s var(--ease);
+  }
+  .zoom-btn:hover::after { border-color: var(--accent); }
+  .window .zoom-btn { bottom: 10px; }
+  .window .zoom-btn::after { right: -4px; bottom: -14px; }
+
+  .zoom {
+    position: fixed; inset: 0; z-index: 70; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+    display: grid; place-items: center; background: rgba(5, 5, 6, .94); color: var(--ink);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .zoom:not([open]) { display: none; }
+  .zoom:focus { outline: none; }
+  .zoom[open] { animation: langIn .35s var(--ease); }
+  .zoom::backdrop { background: transparent; }
+  .zoom img {
+    display: block; max-width: calc(100vw - 2 * var(--pad)); max-height: calc(100svh - var(--top) - 72px); width: auto; height: auto;
+    border-radius: 14px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 40px 90px -30px rgba(0, 0, 0, .9);
+  }
+  .zoom img.tall { border-radius: 26px; }
+  .zoom .close { position: absolute; top: 0; right: var(--pad); height: var(--top); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+  .zoom p { position: absolute; bottom: 20px; left: 0; right: 0; margin: 0; text-align: center; font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-mute); }
   .device figcaption { margin-top: 18px; text-align: center; font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-mute); }
 
   /* ---------- Wasl window (real screenshot) ---------- */
   .window {
-    margin: 0 0 clamp(18px, 4vh, 40px); pointer-events: none;
+    position: relative; margin: 0 0 clamp(18px, 4vh, 40px); pointer-events: none;
     width: clamp(140px, min(24vw, 30vh), 360px);
   }
   .mac { perspective: 1100px; perspective-origin: 50% -160%; }
@@ -286,7 +314,20 @@
     .actions { margin-top: 0; }
     .actions .link { padding: 6px 0; }
   }
-  @media (max-height: 500px) { .window { display: none; } }
+  @media (min-width: 761px) and (max-height: 500px) {
+    :root { --top: 56px; }
+    .grid .h2, .grid b { display: none; }
+    .foot { height: 44px; }
+    .slide { bottom: 48px; }
+    .label { margin-bottom: 8px; }
+    .title, html:lang(ru) .title { font-size: 11vh; }
+    .copy { margin-top: 10px; gap: 6px 32px; font-size: 13px; line-height: 1.45; }
+    .actions .link { padding: 4px 0; }
+    #wasl.slide { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 32px; align-items: end; }
+    #wasl > * { grid-column: 1; }
+    .device figcaption { display: none; }
+    #wasl .window { grid-column: 2; grid-row: 1 / span 3; width: min(34vw, (100svh - 150px) * 1.4); margin: 0 0 6px; }
+  }
 
   /* ---------- progress ---------- */
   .progress {
@@ -346,15 +387,34 @@
     html:lang(ru) .title { font-size: clamp(2.5rem, 11.4vw, 4.2rem); }
     .copy { grid-template-columns: 1fr; gap: 14px; margin-top: 22px; }
     .copy .wide { max-width: none; }
-    .device, .window { display: none; }
+    /* devices fill the free space between the header and the text (--free-q / --free-w set by JS) */
+    .device {
+      --dh: calc(var(--free-q, 320px) - 44px);
+      right: auto; left: 50%; top: calc(var(--top) + var(--free-q, 320px) / 2);
+      width: min(58vw, calc((var(--dh) - 12px) * .462 + 12px));
+      transform: translate3d(-50%, -46%, 0) rotate(-2deg) scale(.96);
+    }
+    body[data-stage="1"] .device { transform: translate3d(-50%, -50%, 0) rotate(-2deg); }
+    .frame { padding: 6px; border-radius: 28px; }
+    .frame img { border-radius: 22px; }
+    .device figcaption, .shot-inline img { display: none; }
+    .window {
+      --mw: min(calc(100vw - 2 * var(--pad) - 28px), calc((var(--free-w, 280px) - 58px) * 1.538));
+      position: fixed; left: 0; right: 0; margin: 0 auto; width: var(--mw);
+      top: calc(var(--top) + (var(--free-w, 280px) - var(--mw) * .65 - 10px) / 2);
+    }
+    .mac-win { left: 7%; right: 7%; top: 11%; border-radius: 5px; }
+    .mac-titlebar { height: 9px; padding: 0 5px; gap: 3px; }
+    .mac-titlebar i { width: 4px; height: 4px; }
+    .mac-titlebar span { font-size: 5px; }
+    .mac-dock i { width: 7px; height: 7px; }
     #wasl .wasl-inline { display: none; }
     #wasl .actions { gap: 4px 20px; margin-top: 0; }
     #wasl .actions .link { padding: 6px 0; }
     .shot-inline { display: flex; gap: 16px; align-items: flex-start; }
     .desk-only { display: none; }
     .shot-inline { align-items: center; }
-    .shot-inline .meta { line-height: 2; }
-    .shot-inline img { width: 58px; height: auto; border-radius: 14px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 20px 40px -10px rgba(0, 0, 0, .8); flex: none; }
+    .shot-inline .meta { line-height: 1.9; letter-spacing: .16em; }
     .progress { right: 10px; height: 22vh; min-height: 140px; }
     .dot span { display: none; }
     .foot { height: 56px; }
@@ -362,10 +422,13 @@
     .fallback { place-items: start center; padding: 18vh 0 0; }
     .fallback svg { width: 46vw; }
   }
-  @media (max-width: 760px) and (max-height: 640px) {
+  @media (max-width: 760px) and (max-height: 740px) {
+    .label { margin-bottom: 12px; }
     .title { font-size: clamp(2.3rem, 10vw, 3.4rem); }
     html:lang(ru) .title { font-size: clamp(2.1rem, 9.2vw, 3.1rem); }
-    .copy { margin-top: 16px; font-size: 15px; }
+    .copy { margin-top: 14px; gap: 10px; font-size: 14px; line-height: 1.5; }
+    .slide { bottom: 72px; }
+    .shot-inline .meta, #wasl .meta { font-size: 10px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -481,6 +544,7 @@
         </div>
         <div class="mac-base" aria-hidden="true"></div>
       </div>
+      <button class="zoom-btn" type="button" data-zoom="assets/wasl-home.png" aria-label="Enlarge screenshot" data-i18n-attr="aria-label:a.zoom"></button>
     </figure>
     <p class="label fade"><span>03</span>Wasl</p>
     <h2 class="title" id="t-wasl" data-split data-title="wasl"><span class="line">Two Machines.</span><span class="line"><em>One Workspace.</em></span></h2>
@@ -512,11 +576,17 @@
 </main>
 
 <figure class="device">
-  <div class="frame"><img src="assets/qayd-home.png" alt="Qayd home screen, demo data" data-i18n-attr="alt:a.qaydAlt" width="780" height="1688" decoding="async"></div>
+  <div class="frame"><img src="assets/qayd-home.png" alt="Qayd home screen, demo data" data-i18n-attr="alt:a.qaydAlt" width="780" height="1688" decoding="async"><button class="zoom-btn" type="button" data-zoom="assets/qayd-home.png" aria-label="Enlarge screenshot" data-i18n-attr="aria-label:a.zoom"></button></div>
   <figcaption data-i18n="qayd.real">Real app · demo data</figcaption>
 </figure>
 
 
+
+<dialog class="zoom" tabindex="-1" aria-label="Screenshot" data-i18n-attr="aria-label:a.shot">
+  <button class="close" type="button" data-i18n="close">Close</button>
+  <img alt="">
+  <p data-i18n="zoom.hint">Tap anywhere to close</p>
+</dialog>
 
 <nav class="progress" aria-label="Story progress" data-i18n-attr="aria-label:a.progress">
   <div class="track"><i class="fill"></i></div>
@@ -576,6 +646,7 @@ const I18N = {
     'a.brand': 'Avibra, back to start', 'a.sections': 'Sections', 'a.progress': 'Story progress',
     'a.lang': 'Language: English', 'a.mac': 'Wasl running on a MacBook',
     'a.qaydAlt': 'Qayd home screen, demo data', 'a.waslAlt': 'Wasl desktop app, main screen',
+    'a.zoom': 'Enlarge screenshot', 'a.shot': 'Screenshot', 'zoom.hint': 'Tap anywhere to close',
     titles: {
       work: ['Design.', 'Build. Ship.'],
       qayd: ['Qayd', 'Commerce'],
@@ -601,6 +672,7 @@ const I18N = {
     'a.brand': 'Avibra, в начало', 'a.sections': 'Разделы', 'a.progress': 'Разделы страницы',
     'a.lang': 'Язык: русский', 'a.mac': 'Wasl на MacBook',
     'a.qaydAlt': 'Главный экран Qayd, демо-данные', 'a.waslAlt': 'Главный экран приложения Wasl',
+    'a.zoom': 'Увеличить скриншот', 'a.shot': 'Скриншот', 'zoom.hint': 'Нажмите, чтобы закрыть',
     titles: {
       work: ['Идея.', 'Код. Запуск.'],
       qayd: ['Qayd', 'Торговля'],
@@ -736,6 +808,34 @@ function closeMenu() { mnav.hidden = true; menuBtn.setAttribute('aria-expanded',
 menuBtn.addEventListener('click', () => { mnav.hidden = false; menuBtn.setAttribute('aria-expanded', 'true'); $('.close', mnav).focus(); });
 $('.close', mnav).addEventListener('click', () => { closeMenu(); menuBtn.focus(); });
 addEventListener('keydown', e => { if (e.key === 'Escape' && !mnav.hidden) { closeMenu(); menuBtn.focus(); } });
+
+/* ---------- screenshot zoom ---------- */
+const zoom = $('.zoom'), zoomImg = $('img', zoom);
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-zoom]');
+  if (!b) return;
+  const src = b.closest('figure').querySelector('img:not([alt=""])') || b.closest('figure').querySelector('img');
+  zoomImg.src = b.dataset.zoom;
+  zoomImg.alt = src?.alt || '';
+  zoomImg.classList.toggle('tall', src ? src.naturalHeight > src.naturalWidth : false);
+  zoom.showModal();
+  zoom.focus();
+});
+zoom.addEventListener('click', () => zoom.close());
+
+/* ---------- mobile: space left for the devices above each slide's text ---------- */
+const topBar = $('.top');
+function fitDevices() {
+  const top = topBar.offsetHeight;
+  root.style.setProperty('--free-q', Math.max(160, $('#qayd').getBoundingClientRect().top - top) + 'px');
+  const w = $('#wasl'), win = $('.window', w);
+  const wTop = [...w.children].filter(el => el !== win)[0].getBoundingClientRect().top;
+  root.style.setProperty('--free-w', Math.max(140, wTop - top) + 'px');
+}
+addEventListener('resize', fitDevices);
+if ('ResizeObserver' in window) { const ro = new ResizeObserver(fitDevices); ro.observe($('#qayd')); ro.observe($('#wasl')); }
+document.fonts?.ready.then(fitDevices);
+fitDevices();
 
 /* ---------- pointer + custom cursor ---------- */
 const ring = $('.cursor-ring'), dot = $('.cursor-dot');
