@@ -247,8 +247,22 @@
     background: radial-gradient(closest-side, rgba(0, 0, 0, .75), transparent); filter: blur(4cqw);
     opacity: calc(1 - var(--q-y, 1)); transform: scaleX(calc(1 - var(--q-y, 1) * .5));
   }
-  .device figcaption { display: flex; justify-content: center; white-space: nowrap; margin-top: 8cqw; opacity: calc(1 - var(--q-y, 1) * 2); }
+  .device figcaption { display: flex; justify-content: center; white-space: nowrap; margin-top: 8cqw; opacity: calc(1 - var(--q-y, 1) * 6); }
   .device figcaption { text-align: center; font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-mute); }
+
+  /* WebGL draws real 3D devices; the CSS ones stay as layout boxes (and as the no-WebGL fallback) */
+  .gl-devices .iphone, .gl-devices .mac { visibility: hidden; }
+  .gl-devices .iphone, .gl-devices .mac-lid { transform: none; }
+  .gl-devices .device::after { display: none; }
+
+  /* darkens the lower screen so the text reads over the iPhone (phones only) */
+  .scrim {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none;
+    height: calc(100svh - var(--top) - var(--free-q, 400px) + 90px);
+    background: linear-gradient(rgba(5, 5, 6, 0), rgba(5, 5, 6, .9) 90px, rgba(5, 5, 6, .96));
+    opacity: 0; transition: opacity .8s var(--ease);
+  }
+  .scrim-on .scrim { opacity: 1; }
 
   /* ---------- Wasl window (real screenshot) ---------- */
   .window {
@@ -377,7 +391,7 @@
   .has-cursor .cursor-ring.is-hover { width: 60px; height: 60px; margin: -30px 0 0 -30px; border-color: var(--accent); }
   .has-cursor, .has-cursor a, .has-cursor button { cursor: none; }
 
-  .scroll-space { height: 560vh; }
+  .scroll-space { height: 700vh; }
 
   /* ---------- mobile ---------- */
   @media (max-width: 760px) {
@@ -394,20 +408,13 @@
     html:lang(ru) .title { font-size: clamp(2.5rem, 11.4vw, 4.2rem); }
     .copy { grid-template-columns: 1fr; gap: 14px; margin-top: 22px; }
     .copy .wide { max-width: none; }
-    /* devices fill the free space between the header and the text (--free-q / --free-w set by JS) */
+    /* the iPhone stands full height between header and footer; the text comes in over its lower part */
     .device {
-      --vis: calc(var(--free-q, 320px) - 26px);
-      right: auto; left: 50%; top: 0;
-      /* the box starts at the very top so a phone leaning towards the viewer is never cut off */
-      width: calc((100vw - 2 * var(--pad)) * .8 + 24vw); padding: calc(var(--top) + 16px) 12vw 0;
-      height: calc(var(--top) + 16px + var(--vis));
-      transform: translate3d(-50%, 0, 0);
-      perspective: 900px; perspective-origin: 50% 115%;
-      /* the horizon: the phone fades out just above the text and sinks behind it */
-      -webkit-mask: linear-gradient(#000 calc(100% - 70px), transparent) no-repeat;
-      mask: linear-gradient(#000 calc(100% - 70px), transparent) no-repeat;
+      --room: calc(100svh - var(--top) - 56px);
+      right: auto; left: 50%; top: calc(var(--top) + var(--room) / 2);
+      width: min((100vw - 2 * var(--pad)) * .8, (var(--room) - 36px) * .48);
+      transform: translate3d(-50%, -50%, 0);
     }
-    .iphone { --hinge: var(--vis); --sink: 0%; }
     .device figcaption, .device::after { display: none; }
     .window {
       --mw: min(calc(100vw - 2 * var(--pad) - 44px), calc((var(--free-w, 280px) - 58px) * 1.538));
@@ -614,6 +621,7 @@
 <div class="cursor-ring" aria-hidden="true"></div>
 <div class="cursor-dot" aria-hidden="true"></div>
 
+<div class="scrim" aria-hidden="true"></div>
 <div class="scroll-space" aria-hidden="true"></div>
 
 <script type="module">
@@ -727,6 +735,7 @@ function splitTitle(h) {
 }
 
 let lang = null;
+const langHooks = [];   // e.g. the 3D MacBook redraws its menu bar
 function applyLang(next, { replay = true } = {}) {
   const dict = I18N[next] || I18N.en;
   lang = next;
@@ -748,6 +757,7 @@ function applyLang(next, { replay = true } = {}) {
     h.append(l1, l2);
     splitTitle(h);
   });
+  langHooks.forEach(f => f(dict));
   $('.lang-cur').textContent = next.toUpperCase();
   $$('.lang-menu [data-lang]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.lang === next)));
   // replay the reveal of the visible slide in the new language
@@ -784,16 +794,23 @@ const slides = $$('.slide');
 const goLinks = $$('[data-go]');
 const counter = $('.counter b');
 const progressEl = $('.progress');
-let target = 0, current = 0, stage = -1;
+let target = 0, current = 0, stage = -1, textStage = -2;
+// a slide's text shows only near its stage; around it the devices animate on their own
+const TEXT_WINDOW = 0.065;
 
 function maxScroll() { return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
 function readScroll() { target = Math.min(1, Math.max(0, scrollY / maxScroll())); }
 addEventListener('scroll', readScroll, { passive: true });
 
+function setText(i) {
+  if (i === textStage) return;
+  textStage = i;
+  slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
+  document.body.classList.toggle('scrim-on', isMobile && i === 1);
+}
 function setStage(i) {
   if (i === stage) return;
   stage = i;
-  slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
   goLinks.forEach(a => a.classList.toggle('is-active', +a.dataset.go === i && !a.classList.contains('brand')));
   document.body.dataset.stage = i;
   counter.textContent = String(i + 1).padStart(2, '0');
@@ -818,12 +835,16 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && !mnav.hidden) { clo
 
 /* ---------- mobile: space left for the devices above each slide's text ---------- */
 const topBar = $('.top');
+const devRects = { phone: null, mac: null };
 function fitDevices() {
   const top = topBar.offsetHeight;
   root.style.setProperty('--free-q', Math.max(160, $('#qayd').getBoundingClientRect().top - top) + 'px');
   const w = $('#wasl'), win = $('.window', w);
   const wTop = [...w.children].filter(el => el !== win)[0].getBoundingClientRect().top;
   root.style.setProperty('--free-w', Math.max(140, wTop - top) + 'px');
+  // boxes the 3D devices are fitted into
+  devRects.phone = $('.iphone').getBoundingClientRect();
+  devRects.mac = $('.mac').getBoundingClientRect();
 }
 addEventListener('resize', fitDevices);
 if ('ResizeObserver' in window) { const ro = new ResizeObserver(fitDevices); ro.observe($('#qayd')); ro.observe($('#wasl')); }
@@ -1077,12 +1098,238 @@ function createGL() {
   points.frustumCulled = false;
   scene.add(points);
 
+
+  /* ---------- 3D devices: Qayd on an iPhone, Wasl on a MacBook ----------
+     Each is fitted into the box of its CSS placeholder (devRects), so layout stays in CSS. */
+  const devScene = new THREE.Scene();
+  devScene.environment = scene.environment;
+  const DEV_D = 12;
+  const devCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  devCam.position.set(0, 0, DEV_D);
+  const devKey = new THREE.DirectionalLight(0xffffff, 2.4); devKey.position.set(-2.5, 3, 5);
+  const devRim = new THREE.DirectionalLight(0xffffff, 2.2); devRim.position.set(3.5, 1.5, -3);
+  const devFill = new THREE.DirectionalLight(0xffffff, 0.6); devFill.position.set(2, -1, 4);
+  devScene.add(devKey, devRim, devFill);
+  const aniso = renderer.capabilities.getMaxAnisotropy();
+
+  function rrShape(w, h, r) {
+    const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0);
+    s.lineTo(x + w, y + h - r); s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+    s.lineTo(x + r, y + h); s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+    s.lineTo(x, y + r); s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
+    return s;
+  }
+  // rounded slab centred on z = 0, total thickness t, rounded edges of size b
+  function slab(w, h, r, t, b) {
+    const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, Math.max(0.002, r - b)),
+      { depth: t - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 6, curveSegments: 32 });
+    g.translate(0, 0, -(t - 2 * b) / 2);
+    return g;
+  }
+  const phys = o => new THREE.MeshPhysicalMaterial({ transparent: true, ...o });
+  function canvasTex(c) {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso;
+    return t;
+  }
+  function loadImg(src) { return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+
+  /* iPhone (proportions of a current Pro: 71.9 × 150 × 8.25 mm; width = 1) */
+  const PW = 1, PH = 2.083, PT = 0.118, PR = 0.17;
+  const titanium = phys({ color: 0x6f7278, metalness: 1, roughness: 0.34, envMapIntensity: 0.8 });
+  const glassBlack = phys({ color: 0x030304, metalness: 0.2, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 });
+  const backGlass = phys({ color: 0x34373d, metalness: 0.35, roughness: 0.5, clearcoat: 0.6, clearcoatRoughness: 0.4 });
+  const lensGlass = phys({ color: 0x05060a, metalness: 0.4, roughness: 0.08, clearcoat: 1 });
+  const phoneScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
+  const phoneMats = [titanium, glassBlack, backGlass, lensGlass, phoneScreenMat];
+
+  const phonePivot = new THREE.Group();          // hinge at the bottom edge
+  const phone = new THREE.Group();
+  phone.position.y = PH / 2;
+  phonePivot.add(phone);
+  devScene.add(phonePivot);
+  phone.add(new THREE.Mesh(slab(PW, PH, PR, PT, 0.03), [glassBlack, titanium]));
+  const SW = 0.93, SH = SW * 1688 / 780;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), phoneScreenMat);
+  screen.position.z = PT / 2 + 0.001;
+  phone.add(screen);
+  const back = new THREE.Mesh(new THREE.ShapeGeometry(rrShape(PW - 0.05, PH - 0.05, PR - 0.025), 32), backGlass);
+  back.rotation.y = Math.PI; back.position.z = -PT / 2 - 0.001;
+  phone.add(back);
+  // camera plateau: top-left seen from the back
+  const cam = new THREE.Group();
+  cam.position.set(PW / 2 - 0.27, PH / 2 - 0.27, -PT / 2);
+  const plateau = new THREE.Mesh(slab(0.44, 0.44, 0.11, 0.028, 0.012), backGlass);
+  plateau.position.z = -0.012;
+  cam.add(plateau);
+  const ringGeo = new THREE.CylinderGeometry(0.078, 0.078, 0.03, 40).rotateX(Math.PI / 2);
+  const lensGeo = new THREE.CylinderGeometry(0.058, 0.058, 0.032, 40).rotateX(Math.PI / 2);
+  [[0.09, 0.09], [0.09, -0.09], [-0.09, 0]].forEach(([x, y]) => {
+    const ring = new THREE.Mesh(ringGeo, titanium); ring.position.set(x, y, -0.035); cam.add(ring);
+    const lens = new THREE.Mesh(lensGeo, lensGlass); lens.position.set(x, y, -0.037); cam.add(lens);
+  });
+  phone.add(cam);
+  const keyGeo = new THREE.BoxGeometry(0.022, 1, 0.05);
+  [[-1, 0.62, 0.09], [-1, 0.4, 0.2], [-1, 0.14, 0.2], [1, 0.42, 0.3], [1, -0.18, 0.17]].forEach(([side, y, h]) => {
+    const k = new THREE.Mesh(keyGeo, titanium);
+    k.scale.y = h; k.position.set(side * (PW / 2 + 0.004), y, 0);
+    phone.add(k);
+  });
+
+  /* MacBook (base width = 1) */
+  const BW = 1, BD = 0.69, BT = 0.034, LH = 0.655, LT = 0.018;
+  const alu = phys({ color: 0x3f4247, metalness: 1, roughness: 0.4, envMapIntensity: 0.75 });
+  const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75 });
+  const padMat = phys({ color: 0x34373c, metalness: 0.9, roughness: 0.3 });
+  const macScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
+  const macMats = [alu, deckMat, padMat, macScreenMat];
+
+  const mac = new THREE.Group();
+  devScene.add(mac);
+  const baseGeo = slab(BW, BD, 0.05, BT, 0.012).rotateX(-Math.PI / 2).translate(0, BT / 2, 0);
+  mac.add(new THREE.Mesh(baseGeo, alu));
+  // keyboard (drawn) and trackpad
+  const kb = document.createElement('canvas'); kb.width = 1024; kb.height = 380;
+  {
+    const g = kb.getContext('2d');
+    g.fillStyle = '#0c0d10'; g.fillRect(0, 0, 1024, 380);
+    const rows = [14, 14, 14, 13, 12], kh = 380 / 6.2;
+    rows.forEach((n, r) => {
+      const kw = 1024 / n;
+      for (let i = 0; i < n; i++) { g.fillStyle = '#1b1d22'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
+    });
+    g.fillStyle = '#1b1d22'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
+  }
+  deckMat.map = canvasTex(kb);
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.31).rotateX(-Math.PI / 2), deckMat);
+  deck.position.set(0, BT + 0.0015, -0.13);
+  mac.add(deck);
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.24).rotateX(-Math.PI / 2), padMat);
+  pad.position.set(0, BT + 0.0012, 0.19);
+  mac.add(pad);
+  // lid on a hinge at the back edge; closed = lying on the base, screen down
+  const lidPivot = new THREE.Group();
+  lidPivot.position.set(0, BT, -BD / 2 + 0.012);
+  mac.add(lidPivot);
+  const lidGeo = slab(BW, LH, 0.045, LT, 0.006).translate(0, LH / 2, -LT / 2);
+  lidPivot.add(new THREE.Mesh(lidGeo, alu));
+  const macScreen = new THREE.Mesh(new THREE.PlaneGeometry(BW - 0.01, LH - 0.01), macScreenMat);
+  macScreen.position.set(0, LH / 2, 0.0008);
+  lidPivot.add(macScreen);
+
+  // screen contents
+  const macCanvas = document.createElement('canvas'); macCanvas.width = 1600; macCanvas.height = Math.round(1600 * (LH - 0.01) / (BW - 0.01));
+  let waslImg = null, macDict = I18N[lang] || I18N.en;
+  function drawMacScreen() {
+    const c = macCanvas, g = c.getContext('2d'), W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0a0b0d'; g.beginPath(); g.roundRect(0, 0, W, H, [60, 60, 8, 8]); g.fill();
+    const bx = 28, by = 30, bw = W - 56, bh = H - 30 - 52;
+    g.save(); g.beginPath(); g.roundRect(bx, by, bw, bh, [26, 26, 2, 2]); g.clip();
+    let gr = g.createLinearGradient(bx, by, bx + bw, by + bh); gr.addColorStop(0, '#10182b'); gr.addColorStop(1, '#0a0e18');
+    g.fillStyle = gr; g.fillRect(bx, by, bw, bh);
+    [[0.18, 1.1, 0.75, '29,59,115'], [0.92, 0, 0.6, '58,42,85']].forEach(([x, y, r, rgb]) => {
+      const rg = g.createRadialGradient(bx + bw * x, by + bh * y, 0, bx + bw * x, by + bh * y, bw * r);
+      rg.addColorStop(0, `rgba(${rgb},1)`); rg.addColorStop(1, `rgba(${rgb},0)`);
+      g.fillStyle = rg; g.fillRect(bx, by, bw, bh);
+    });
+    // menu bar
+    const mb = bh * 0.045;
+    g.fillStyle = 'rgba(20,22,30,.5)'; g.fillRect(bx, by, bw, mb);
+    g.textBaseline = 'middle'; g.fillStyle = 'rgba(255,255,255,.9)';
+    let x = bx + 30; const my = by + mb / 2, fs = mb * 0.56;
+    g.beginPath(); g.arc(x + fs * 0.35, my, fs * 0.36, 0, Math.PI * 2); g.fill(); x += fs * 1.6;
+    g.font = `600 ${fs}px Inter, system-ui, sans-serif`; g.fillText('Wasl', x, my); x += g.measureText('Wasl').width + fs * 1.4;
+    g.font = `400 ${fs}px Inter, system-ui, sans-serif`;
+    ['mac.file', 'mac.edit', 'mac.view', 'mac.window'].forEach(k => { g.fillText(macDict[k], x, my); x += g.measureText(macDict[k]).width + fs * 1.3; });
+    g.textAlign = 'right'; g.fillText(macDict['mac.time'], bx + bw - 30, my); g.textAlign = 'left';
+    // app window
+    const ww = bw * 0.8, wx = bx + (bw - ww) / 2, wy = by + bh * 0.1, tb = ww * 0.03, ih = ww * 1400 / 2200;
+    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 50; g.shadowOffsetY = 18;
+    g.fillStyle = '#16191f'; g.beginPath(); g.roundRect(wx, wy, ww, tb + ih, 16); g.fill(); g.restore();
+    g.save(); g.beginPath(); g.roundRect(wx, wy, ww, tb + ih, 16); g.clip();
+    g.fillStyle = '#1c2027'; g.fillRect(wx, wy, ww, tb);
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => { g.fillStyle = col; g.beginPath(); g.arc(wx + tb * (0.8 + i * 0.7), wy + tb / 2, tb * 0.22, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = 'rgba(255,255,255,.5)'; g.font = `500 ${tb * 0.42}px Inter, system-ui, sans-serif`; g.textAlign = 'center';
+    g.fillText('Wasl', wx + ww / 2, wy + tb / 2); g.textAlign = 'left';
+    if (waslImg) g.drawImage(waslImg, wx, wy + tb, ww, ih);
+    g.restore();
+    // dock
+    const dw = bw * 0.26, dh = bh * 0.07, dx = bx + (bw - dw) / 2, dy = by + bh - dh - bh * 0.02;
+    g.fillStyle = 'rgba(255,255,255,.14)'; g.beginPath(); g.roundRect(dx, dy, dw, dh, dh * 0.3); g.fill();
+    for (let i = 0; i < 5; i++) {
+      const s = dh * 0.72, ix = dx + dw * (i + 0.5) / 5 - s / 2, iy = dy + (dh - s) / 2;
+      const ig = g.createLinearGradient(ix, iy, ix + s, iy + s);
+      ig.addColorStop(0, i === 2 ? '#5b8cff' : '#4b5566'); ig.addColorStop(1, i === 2 ? '#2c4fa8' : '#262c36');
+      g.fillStyle = ig; g.beginPath(); g.roundRect(ix, iy, s, s, s * 0.24); g.fill();
+    }
+    g.restore();
+    // notch
+    g.fillStyle = '#0a0b0d'; g.beginPath(); g.roundRect(W / 2 - W * 0.07, by - 2, W * 0.14, mb * 1.05, [0, 0, 14, 14]); g.fill();
+    if (macScreenMat.map) macScreenMat.map.needsUpdate = true;
+    else { macScreenMat.map = canvasTex(macCanvas); macScreenMat.needsUpdate = true; }
+  }
+  langHooks.push(d => { macDict = d; drawMacScreen(); });
+  drawMacScreen();
+  document.fonts?.ready.then(drawMacScreen);
+  loadImg('assets/wasl-home.png').then(img => { waslImg = img; drawMacScreen(); });
+  loadImg('assets/qayd-home.png').then(img => {
+    if (!img) return;
+    const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.beginPath(); g.roundRect(0, 0, w, h, w * 0.14); g.clip();
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+    const iw = w * 0.31, ih = w * 0.092, iy = w * 0.03;   // Dynamic Island
+    g.fillStyle = '#000'; g.beginPath(); g.roundRect((w - iw) / 2, iy, iw, ih, ih / 2); g.fill();
+    g.fillStyle = '#121624'; g.beginPath(); g.arc((w + iw) / 2 - ih * 0.55, iy + ih / 2, ih * 0.2, 0, Math.PI * 2); g.fill();
+    phoneScreenMat.map = canvasTex(c); phoneScreenMat.needsUpdate = true;
+  });
+
+  const setOpacity = (mats, o) => { for (const m of mats) m.opacity = o; };
+  function placeDevices(s) {
+    const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
+    const toX = px => (px - W / 2) * wpp, toY = px => (H / 2 - px) * wpp;
+
+    // iPhone: rises face-down from below, stands up, then tips over backwards (back side down) and sinks
+    const R = devRects.phone, dq = s.p - 1 / 3;
+    const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(0.095, 0.16, Math.abs(dq));
+    const oq = 1 - smooth(0.14, 0.166, Math.abs(dq));
+    phonePivot.visible = !!R && R.width > 0 && oq > 0.003;
+    if (phonePivot.visible) {
+      const k = R.width * wpp, dir = dq < 0 ? 1 : -1;
+      phonePivot.scale.setScalar(k);
+      phonePivot.position.set(toX(R.left + R.width / 2), toY(R.bottom) - aq * R.height * wpp * 0.3 + (reduce ? 0 : Math.sin(s.time * 0.8) * 0.01 * k), 0);
+      phonePivot.rotation.set(dir * 1.35 * aq, -0.2 + (dir > 0 ? 0.5 : -0.35) * aq + s.mx * 0.12, dir * 0.06 * aq);
+      setOpacity(phoneMats, oq);
+    }
+
+    // MacBook: the lid closes whenever it leaves, in either direction
+    const M = devRects.mac, dw = s.p - 2 / 3;
+    const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(0.095, 0.16, Math.abs(dw));
+    const ow = 1 - smooth(0.14, 0.166, Math.abs(dw));
+    mac.visible = !!M && M.width > 0 && ow > 0.003;
+    if (mac.visible) {
+      // desktop/landscape: fit the box height too (the model is ~0.9 of its width tall)
+      const k = (isMobile ? M.width * 1.06 : Math.min(M.width * 0.84, M.height * 1.05)) * wpp;
+      mac.scale.setScalar(k);
+      // the open model spans about -0.12…0.79 of its width vertically: centre that span in the box
+      mac.position.set(toX(M.left + M.width / 2), toY(M.top + M.height / 2) - 0.34 * k - aw * M.height * wpp * 0.15, 0);
+      mac.rotation.set(0.34, (dw < 0 ? 0.35 : -0.35) * aw + s.mx * 0.1, 0);
+      lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
+      setOpacity(macMats, ow);
+    }
+    devKey.color.copy(key.color); devRim.color.copy(rim.color);
+  }
+
   let W = 1, H = 1;
   function resize(w, h) {
     W = w; H = h;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.5 : 1.75));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 2 : 1.75));
     renderer.setSize(w, h);
     camera.aspect = w / h;
+    devCam.aspect = w / h; devCam.updateProjectionMatrix();
     bgMat.uniforms.uRes.value.set(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
     pMat.uniforms.uPR.value = renderer.getPixelRatio();
   }
@@ -1148,6 +1395,8 @@ function createGL() {
     renderer.clear();
     renderer.render(bgScene, bgCam);
     renderer.render(scene, camera);
+    placeDevices(s);
+    if (phonePivot.visible || mac.visible) { renderer.clearDepth(); renderer.render(devScene, devCam); }
   }
 
   return { resize, render };
@@ -1156,6 +1405,7 @@ function createGL() {
 let gl = null;
 try { gl = createGL(); } catch (err) { console.warn('WebGL init failed', err); gl = null; }
 if (!gl) root.classList.add('no-webgl');
+else { root.classList.add('gl-devices'); fitDevices(); }
 
 /* ---------- resize ---------- */
 let lastW = 0, lastH = 0;
@@ -1200,19 +1450,21 @@ function tick(now) {
   my += ((reduce ? 0 : tmy) - my) * (reduce ? 1 : mk);
   state.mx = mx; state.my = my; state.p = current;
 
-  setStage(Math.min(3, Math.round(current * 3)));
+  const near = Math.min(3, Math.round(current * 3));
+  setStage(near);
+  setText(Math.abs(current - near / 3) < TEXT_WINDOW ? near : -1);
   progressEl.style.setProperty('--p', current.toFixed(4));
   document.body.classList.toggle('scrolled', target > 0.015);
 
   // devices: iPhone around stage 1, MacBook around stage 2
   const dq = current - 1 / 3, dw = current - 2 / 3;
-  const aq = reduce ? +(Math.abs(dq) > 0.1) : smooth(0.03, 0.135, Math.abs(dq));
-  const aw = reduce ? +(Math.abs(dw) > 0.1) : smooth(0.03, 0.12, Math.abs(dw));
+  const aq = reduce ? +(Math.abs(dq) > 0.12) : smooth(0.095, 0.16, Math.abs(dq));
+  const aw = reduce ? +(Math.abs(dw) > 0.12) : smooth(0.095, 0.16, Math.abs(dw));
   setVar('--q-rot', (dq < 0 ? -88 : 88) * aq);
   setVar('--q-y', aq);
-  setVar('--q-o', 1 - smooth(0.11, 0.16, Math.abs(dq)));
+  setVar('--q-o', 1 - smooth(0.14, 0.166, Math.abs(dq)));
   setVar('--w-rot', -88 * aw);
-  setVar('--w-o', 1 - smooth(0.12, 0.16, Math.abs(dw)));
+  setVar('--w-o', 1 - smooth(0.14, 0.166, Math.abs(dw)));
 
   const [i, t] = stageMix(current);
   const h = '#' + mixC(PAL.accent, i, t, accTmp).getHexString();
