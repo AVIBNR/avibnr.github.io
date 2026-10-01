@@ -837,8 +837,7 @@ let target = 0, current = 0, stage = -1, textStage = -2;
 const T = {
   text: [0.02, 0.04],      // text in place → gone
   scrim: [0.03, 0.06],     // darkening under the text (phones, Qayd)
-  dev: [0.035, 0.15],      // device standing → moved away
-  devFade: [0.135, 0.155],  // …and fully gone before the halfway point, so two devices never meet
+  dev: [0.035, 0.15],      // device standing → fully out of frame (before the halfway point, so two never meet)
   away: [0.16, 0.26],      // sculpture: fully away while a device is near, back only after it has gone
 };
 const TEXT_WINDOW = T.text[1] + 0.002;
@@ -862,7 +861,7 @@ function go(i) {
   moving = true;
   gsap.to(nav, {
     p: i / 3,
-    duration: reduce ? 0.6 : 4 + (steps - 1) * 1.2,   // slow and even: each device move inside takes ~1 s
+    duration: 4 + (steps - 1) * 1.2,   // slow and even: each device move inside takes ~1 s
     ease: 'sine.inOut',
     overwrite: true,
     onComplete: () => gsap.delayedCall(0.35, () => { moving = false; }),   // let trackpad inertia die out
@@ -1226,7 +1225,7 @@ function createGL() {
     g.translate(0, 0, -(t - 2 * b) / 2);
     return g;
   }
-  const phys = o => new THREE.MeshPhysicalMaterial({ transparent: true, ...o });
+  const phys = o => new THREE.MeshPhysicalMaterial(o);
   function canvasTex(c) {
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso;
@@ -1242,7 +1241,6 @@ function createGL() {
   const backGlass = phys({ color: 0x3e0f1a, metalness: 0.3, roughness: 0.55, clearcoat: 0.5, clearcoatRoughness: 0.45 });
   const lensGlass = phys({ color: 0x05060a, metalness: 0.4, roughness: 0.08, clearcoat: 1 });
   const phoneScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
-  const phoneMats = [titanium, glassBlack, backGlass, lensGlass, phoneScreenMat];
 
   const phonePivot = new THREE.Group();          // hinge at the bottom edge
   const phone = new THREE.Group();
@@ -1281,10 +1279,9 @@ function createGL() {
   const BW = 1, BD = 0.69, BT = 0.034, LH = 0.655, LT = 0.018;
   // Midnight, the darkest MacBook Air finish: near-black with a blue cast that sits in Wasl's night palette
   const alu = phys({ color: 0x2c3442, metalness: 1, roughness: 0.36, envMapIntensity: 0.9 });
-  const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75 });
+  const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75, transparent: true });   // body colour shows between the keys
   const padMat = phys({ color: 0x252b36, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
   const macScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
-  const macMats = [alu, deckMat, padMat, macScreenMat];
 
   const mac = new THREE.Group();
   devScene.add(mac);
@@ -1388,7 +1385,6 @@ function createGL() {
     phoneScreenMat.map = canvasTex(c); phoneScreenMat.needsUpdate = true;
   });
 
-  const setOpacity = (mats, o) => { for (const m of mats) m.opacity = o; };
   function placeDevices(s) {
     const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
     const R = devRects.phone, M = devRects.mac;
@@ -1397,27 +1393,30 @@ function createGL() {
 
     // iPhone: one axis only. It rises straight up leaning slightly towards the viewer, like a book being stood up,
     // and leaves the same way leaning back
-    const aq = s.aq ?? 1, oq = s.oq ?? 0;
-    phonePivot.visible = !!R && R.width > 0 && oq > 0.003;
+    const aq = s.aq ?? 1;
+    phonePivot.visible = !!R && R.width > 0 && aq < 0.999;
     if (phonePivot.visible) {
       const k = R.width * wpp, dir = s.dirQ ?? 1;
       phonePivot.scale.setScalar(k);
-      phonePivot.position.set(0, -R.height / 2 * wpp - aq * R.height * wpp * 0.6, 0);
+      // from standing to completely below the bottom edge of the screen
+      const out = (H - R.top + 140) * wpp;   // margin covers the lean and perspective
+      phonePivot.position.set(0, -R.height / 2 * wpp - aq * out, 0);
       phonePivot.rotation.set(dir * 0.42 * aq, 0, 0);
-      setOpacity(phoneMats, oq);
     }
 
     // MacBook: the body stays level; only the lid moves, closing whenever it leaves
-    const aw = s.aw ?? 1, ow = s.ow ?? 0;
-    mac.visible = !!M && M.width > 0 && ow > 0.003;
+    const aw = s.aw ?? 1;
+    mac.visible = !!M && M.width > 0 && aw < 0.999;
     if (mac.visible) {
       const k = (isMobile ? M.width * 1.06 : H <= 500 ? Math.min(M.width * 0.84, M.height * 1.05) : M.width * 0.88) * wpp;
       mac.scale.setScalar(k);
       // the open model spans about -0.12…0.79 of its width vertically: centre that span on the box
-      mac.position.set(0, -0.34 * k - aw * M.height * wpp * 0.15, 0);
+      // leaving: the lid closes first, then the closed laptop slides fully below the screen; arriving is the reverse
+      const lidT = smooth(0, 0.5, aw), outT = smooth(0.35, 1, aw);
+      const out = (H - M.top + M.height * 0.5 + 60) * wpp;
+      mac.position.set(0, -0.34 * k - outT * out, 0);
       mac.rotation.set(0.3, 0, 0);
-      lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
-      setOpacity(macMats, ow);
+      lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, lidT);
     }
     devKey.color.copy(key.color); devRim.color.copy(rim.color);
     return { lookAt, R, M };
@@ -1572,15 +1571,16 @@ function tick(now) {
 
   // devices: iPhone around stage 1, MacBook around stage 2
   const dq = current - 1 / 3, dw = current - 2 / 3;
-  state.aq = reduce ? +(Math.abs(dq) > 0.1) : smooth(T.dev[0], T.dev[1], Math.abs(dq));
-  state.oq = 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dq));
+  // a device never fades: it travels fully out of frame and back in (aq/aw: 0 = in place, 1 = out of frame)
+  state.aq = smooth(T.dev[0], T.dev[1], Math.abs(dq));
+  state.oq = state.aq < 0.999 ? 1 : 0;
   state.dirQ = dq < 0 ? 1 : -1;
-  state.aw = reduce ? +(Math.abs(dw) > 0.1) : smooth(T.dev[0], T.dev[1], Math.abs(dw));
-  state.ow = 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dw));
+  state.aw = smooth(T.dev[0], T.dev[1], Math.abs(dw));
+  state.ow = state.aw < 0.999 ? 1 : 0;
   // the sculpture makes room: gone before a device appears, back only once it has left
   const pres = d => 1 - smooth(T.away[0], T.away[1], Math.abs(d));
   state.away = isMobile ? Math.max(pres(dq), pres(dw)) : pres(dw);
-  setVar('--dev', Math.max(state.oq, state.ow));
+  setVar('--dev', Math.max(1 - state.aq, 1 - state.aw));
   setVar('--q-rot', -88 * state.dirQ * state.aq);
   setVar('--q-y', state.aq);
   setVar('--q-o', state.oq);
