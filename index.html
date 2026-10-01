@@ -142,6 +142,8 @@
 
   /* ---------- slides ---------- */
   .slides { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+  .slide, .scrim { will-change: opacity; }
+  .slide.is-active .char { will-change: transform, opacity, filter; }
   .slide {
     position: absolute; left: var(--pad); right: calc(var(--pad) + 64px);
     bottom: clamp(92px, 13vh, 150px);
@@ -835,9 +837,10 @@ const progressEl = $('.progress');
 let target = 0, current = 0, stage = -1, textStage = -2;
 // a slide's text shows only near its stage; around it the devices animate on their own
 const T = {
-  text: [0.02, 0.04],      // text in place → gone
+  text: [0.004, 0.03],     // text in place → gone (starts the moment a gesture lands, so it reads as a response)
   scrim: [0.03, 0.06],     // darkening under the text (phones, Qayd)
   dev: [0.035, 0.15],      // device standing → fully out of frame (before the halfway point, so two never meet)
+  mac: [0.005, 0.155],     // the MacBook does two things (lid, then slide), so it gets a longer stretch
   away: [0.16, 0.26],      // sculpture: fully away while a device is near, back only after it has gone
 };
 const TEXT_WINDOW = T.text[1] + 0.002;
@@ -1000,7 +1003,8 @@ function createGL() {
   const canvas = $('#gl');
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // on 2× and 3× screens the pixels are too small for stair-steps to show, so MSAA there is pure GPU cost
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: (devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
   } catch (err) { return null; }
   if (!renderer.getContext()) return null;
 
@@ -1225,7 +1229,7 @@ function createGL() {
     g.translate(0, 0, -(t - 2 * b) / 2);
     return g;
   }
-  const phys = o => new THREE.MeshPhysicalMaterial(o);
+  const phys = ({ clearcoat, clearcoatRoughness, ...o }) => new THREE.MeshStandardMaterial(o);
   function canvasTex(c) {
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso;
@@ -1371,7 +1375,16 @@ function createGL() {
   langHooks.push(d => { macDict = d; drawMacScreen(); });
   drawMacScreen();
   document.fonts?.ready.then(drawMacScreen);
-  loadImg('assets/wasl-home.webp').then(img => { waslImg = img; drawMacScreen(); });
+  loadImg('assets/wasl-home.webp').then(img => { waslImg = img; drawMacScreen(); warmUp(); });
+  // compile every device shader and upload every texture up front, so the first entrance doesn't hitch
+  function warmUp() {
+    const pv = phonePivot.visible, mv = mac.visible;
+    phonePivot.visible = mac.visible = true;
+    renderer.compile(devScene, devCam);
+    [phoneScreenMat.map, macScreenMat.map, deckMat.map].forEach(t => t && renderer.initTexture(t));
+    phonePivot.visible = pv; mac.visible = mv;
+  }
+  warmUp();
   loadImg('assets/qayd-home.webp').then(img => {
     if (!img) return;
     const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement('canvas');
@@ -1383,6 +1396,7 @@ function createGL() {
     g.fillStyle = '#000'; g.beginPath(); g.roundRect((w - iw) / 2, iy, iw, ih, ih / 2); g.fill();
     g.fillStyle = '#121624'; g.beginPath(); g.arc((w + iw) / 2 - ih * 0.55, iy + ih / 2, ih * 0.2, 0, Math.PI * 2); g.fill();
     phoneScreenMat.map = canvasTex(c); phoneScreenMat.needsUpdate = true;
+    warmUp();
   });
 
   function placeDevices(s) {
@@ -1412,7 +1426,7 @@ function createGL() {
       mac.scale.setScalar(k);
       // the open model spans about -0.12…0.79 of its width vertically: centre that span on the box
       // leaving: the lid closes first, then the closed laptop slides fully below the screen; arriving is the reverse
-      const lidT = smooth(0, 0.5, aw), outT = smooth(0.35, 1, aw);
+      const lidT = smooth(0, 0.45, aw), outT = smooth(0.3, 1, aw);
       const out = (H - M.top + M.height * 0.5 + 60) * wpp;
       mac.position.set(0, -0.34 * k - outT * out, 0);
       mac.rotation.set(0.3, 0, 0);
@@ -1499,6 +1513,7 @@ function createGL() {
     renderer.setRenderTarget(null);
     renderer.clear();
     renderer.render(blitScene, bgCam);
+    sculpture.visible = s.away < 0.999;
     renderer.render(scene, camera);
     const { lookAt, R, M } = placeDevices(s);
     const showPhone = phonePivot.visible, showMac = mac.visible;
@@ -1561,7 +1576,7 @@ function tick(now) {
   state.mx = mx; state.my = my; state.p = current;
 
   const near = Math.min(3, Math.round(current * 3));
-  setStage(near);
+  setStage(index);   // counter and dots answer the gesture at once
   const dn = Math.abs(current - near / 3);
   setText(dn < TEXT_WINDOW ? near : -1);
   setVar('--txt', 1 - smooth(T.text[0], T.text[1], dn));
@@ -1575,7 +1590,7 @@ function tick(now) {
   state.aq = smooth(T.dev[0], T.dev[1], Math.abs(dq));
   state.oq = state.aq < 0.999 ? 1 : 0;
   state.dirQ = dq < 0 ? 1 : -1;
-  state.aw = smooth(T.dev[0], T.dev[1], Math.abs(dw));
+  state.aw = smooth(T.mac[0], T.mac[1], Math.abs(dw));
   state.ow = state.aw < 0.999 ? 1 : 0;
   // the sculpture makes room: gone before a device appears, back only once it has left
   const pres = d => 1 - smooth(T.away[0], T.away[1], Math.abs(d));
