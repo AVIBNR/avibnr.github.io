@@ -15,7 +15,8 @@
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
-  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.mjs"
+  "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+  "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/"
 } }
 </script>
 <style>
@@ -41,9 +42,9 @@
     overscroll-behavior: none;                   /* no pull-to-refresh in the middle of the story */
   }
   a, button { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-  /* Lenis (smooth scroll) */
-  html.lenis, html.lenis body { height: auto; }
-  .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+  /* the story is one fixed screen; gestures move between sections (GSAP Observer), the page itself never scrolls */
+  html, body { height: 100%; overflow: hidden; }
+  body { touch-action: none; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: var(--sans); font-weight: 300; font-size: 15px; line-height: 1.6;
@@ -426,7 +427,6 @@
   .has-cursor .cursor-ring.is-hover { width: 60px; height: 60px; margin: -30px 0 0 -30px; border-color: var(--accent); }
   .has-cursor, .has-cursor a, .has-cursor button { cursor: none; }
 
-  .scroll-space { height: 700vh; }
 
   /* ---------- mobile ---------- */
   @media (max-width: 760px) {
@@ -658,12 +658,13 @@
 <div class="cursor-dot" aria-hidden="true"></div>
 
 <div class="scrim" aria-hidden="true"></div>
-<div class="scroll-space" aria-hidden="true"></div>
 
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import Lenis from 'lenis';
+import { gsap } from 'gsap';
+import { Observer } from 'gsap/Observer.js';
+gsap.registerPlugin(Observer);
 
 /* Optional: path to your own .glb (e.g. 'assets/avibra.glb').
    It replaces the procedural sculpture; nodes named "A" and "V" (if present)
@@ -836,25 +837,60 @@ let target = 0, current = 0, stage = -1, textStage = -2;
 const T = {
   text: [0.02, 0.04],      // text in place → gone
   scrim: [0.03, 0.06],     // darkening under the text (phones, Qayd)
-  dev: [0.04, 0.14],       // device standing → moved away
-  devFade: [0.128, 0.15],  // …and fully gone before the halfway point, so two devices never meet
-  away: [0.17, 0.26],      // sculpture: fully away while a device is near, back only after it has gone
+  dev: [0.035, 0.15],      // device standing → moved away
+  devFade: [0.135, 0.155],  // …and fully gone before the halfway point, so two devices never meet
+  away: [0.16, 0.26],      // sculpture: fully away while a device is near, back only after it has gone
 };
 const TEXT_WINDOW = T.text[1] + 0.002;
 const lin = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a)));
-const easeInOutSine = t => (1 - Math.cos(Math.PI * t)) / 2;
 
-function maxScroll() { return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
-function readScroll() { target = Math.min(1, Math.max(0, scrollY / maxScroll())); }
-addEventListener('scroll', readScroll, { passive: true });
-
-/* smooth scroll for wheel, trackpad and touch; stepped in tick() so the page and the 3D share one frame */
-let lenis = null;
-if (!reduce) {
-  try {
-    lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9, syncTouch: true, syncTouchLerp: 0.07, touchMultiplier: 1.1, autoRaf: false });
-  } catch (err) { lenis = null; }
+/* ---------- navigation: one gesture = one section ----------
+   GSAP Observer (the pattern of GSAP's "full-screen section transitions" demo) reads wheel, trackpad and touch
+   the same way. Every move is a complete, eased glide; input is ignored until it lands, so trackpad inertia
+   or a long swipe never skips a section and nothing can stop half way. */
+const SECTION_IDS = ['work', 'qayd', 'wasl', 'contact'];
+const nav = { p: 0 };
+let index = Math.max(0, SECTION_IDS.indexOf(location.hash.slice(1)));
+let moving = false;
+nav.p = index / 3;
+target = nav.p;
+function go(i) {
+  i = Math.max(0, Math.min(3, i));
+  if (i === index && !moving) return;
+  const steps = Math.abs(i - index) || 1;
+  index = i;
+  moving = true;
+  gsap.to(nav, {
+    p: i / 3,
+    duration: reduce ? 0.6 : 4 + (steps - 1) * 1.2,   // slow and even: each device move inside takes ~1 s
+    ease: 'sine.inOut',
+    overwrite: true,
+    onComplete: () => gsap.delayedCall(0.35, () => { moving = false; }),   // let trackpad inertia die out
+  });
+  try { history.replaceState(null, '', '#' + SECTION_IDS[i]); } catch (e) {}
 }
+addEventListener('hashchange', () => {
+  const i = SECTION_IDS.indexOf(location.hash.slice(1));
+  if (i >= 0 && i !== index) go(i);
+});
+const overlayOpen = () => !mnav.hidden || !langMenu.hidden;
+Observer.create({
+  target: window,
+  type: 'wheel,touch',
+  wheelSpeed: -1,          // wheel down and swipe up both mean "next"
+  tolerance: 12,
+  preventDefault: true,
+  onUp: () => { if (!moving && !overlayOpen()) go(index + 1); },
+  onDown: () => { if (!moving && !overlayOpen()) go(index - 1); },
+});
+addEventListener('keydown', e => {
+  if (overlayOpen() || e.target.closest?.('input, textarea')) return;
+  const k = e.key;
+  if (['ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); if (!moving) go(index + 1); }
+  else if (['ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); if (!moving) go(index - 1); }
+  else if (k === 'Home') { e.preventDefault(); go(0); }
+  else if (k === 'End') { e.preventDefault(); go(3); }
+});
 
 function setText(i) {
   if (i === textStage) return;
@@ -868,26 +904,9 @@ function setStage(i) {
   document.body.dataset.stage = i;
   counter.textContent = String(i + 1).padStart(2, '0');
 }
-let snapping = false, lastInput = 0, travelDir = 1;
-// a whole section takes ~3 s, so every device move inside it gets ~0.7 s
-function glideTo(i) {
-  const to = Math.max(0, Math.min(3, i)), dist = Math.abs(to / 3 - target) * 3;
-  snapping = true;
-  lenis.scrollTo(maxScroll() * to / 3, { duration: 0.5 + 2.5 * Math.min(1, dist), easing: easeInOutSine, onComplete: () => { snapping = false; } });
-}
-['wheel', 'touchstart', 'touchmove', 'keydown', 'pointerdown'].forEach(type =>
-  addEventListener(type, () => { lastInput = performance.now(); if (type !== 'pointerdown') snapping = false; }, { passive: true }));
-function maybeSnap(now) {
-  if (!lenis || snapping || lenis.isScrolling || now - lastInput < 140) return;
-  const sPos = target * 3;
-  const to = travelDir > 0 ? Math.ceil(sPos - 0.1) : Math.floor(sPos + 0.1);   // a nudge under 10% springs back
-  if (Math.abs(sPos - to) > 0.002) glideTo(to);
-}
 function goTo(i) {
-  const top = maxScroll() * i / 3;
-  if (lenis) glideTo(i);
-  else scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
   closeMenu();
+  go(i);
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-go]');
@@ -1507,7 +1526,6 @@ function onResize() {
   if (w === lastW && Math.abs(h - lastH) < 120 && lastW) return;
   lastW = w; lastH = h;
   gl?.resize(w, h);
-  readScroll();
 }
 addEventListener('resize', onResize);
 mqMobile.addEventListener('change', onResize);
@@ -1526,19 +1544,12 @@ function setVar(name, v) {
 }
 
 function tick(now) {
-  if (lenis) {
-    lenis.raf(now);
-    const p = lenis.progress;
-    if (Math.abs(p - target) > 1e-5) travelDir = Math.sign(p - target);
-    target = p;
-    maybeSnap(now);
-  }
+  target = nav.p;
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   state.time += dt;
 
-  // Lenis already eases the scroll; without it, a light damping smooths native jumps
-  current = lenis || reduce ? target : current + (target - current) * (1 - Math.pow(0.0015, dt));
+  current = target;   // the GSAP glide is the easing
   const v = Math.abs(target - prevTarget) / Math.max(dt, 1e-3);
   prevTarget = target;
   vel += (v - vel) * (1 - Math.pow(0.02, dt));
@@ -1593,7 +1604,6 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-readScroll();
 current = target;
 (document.fonts?.ready || Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(tick)));
 </script>
