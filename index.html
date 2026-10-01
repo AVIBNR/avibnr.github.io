@@ -856,19 +856,27 @@ let index = Math.max(0, SECTION_IDS.indexOf(location.hash.slice(1)));
 let moving = false;
 nav.p = index / 3;
 target = nav.p;
+const HALF = 2;          // s: one half of a step = one object leaving or arriving
+const MAC_HALF = 3.2;    // the MacBook closes and slides (two moves), so its half is given more time
+let glide = null;
 function go(i) {
   i = Math.max(0, Math.min(3, i));
   if (i === index && !moving) return;
-  const steps = Math.abs(i - index) || 1;
+  const from = index, steps = Math.abs(i - from) || 1;
   index = i;
   moving = true;
-  gsap.to(nav, {
-    p: i / 3,
-    duration: 4 + (steps - 1) * 1.2,   // slow and even: each device move inside takes ~1 s
-    ease: 'sine.inOut',
-    overwrite: true,
-    onComplete: () => gsap.delayedCall(0.35, () => { moving = false; }),   // let trackpad inertia die out
-  });
+  glide?.kill();
+  gsap.killTweensOf(nav);
+  const done = () => gsap.delayedCall(0.35, () => { moving = false; });   // let trackpad inertia die out
+  if (steps === 1) {
+    // leaving half, then arriving half; at the seam nothing is on screen, so their pace can differ
+    const hA = from === 2 ? MAC_HALF : HALF, hB = i === 2 ? MAC_HALF : HALF;
+    glide = gsap.timeline({ onComplete: done })
+      .to(nav, { p: (from + i) / 6, duration: hA, ease: 'sine.in' })
+      .to(nav, { p: i / 3, duration: hB, ease: 'sine.out' });
+  } else {
+    glide = gsap.to(nav, { p: i / 3, duration: 4 + (steps - 1) * 1.2, ease: 'sine.inOut', onComplete: done });
+  }
   try { history.replaceState(null, '', '#' + SECTION_IDS[i]); } catch (e) {}
 }
 addEventListener('hashchange', () => {
