@@ -78,6 +78,8 @@
   .grid .h { left: 0; right: 0; height: 1px; }
   .grid .v1 { left: var(--pad); } .grid .v2 { left: 33.333%; } .grid .v3 { left: 66.666%; } .grid .v4 { right: var(--pad); }
   .grid .h1 { top: var(--top); } .grid .h2 { bottom: 64px; }
+  /* inner grid lines step back while a device stands over them (--dev set every frame) */
+  .grid .v2, .grid .v3 { opacity: calc(1 - var(--dev, 0)); }
   .grid b { position: absolute; width: 3px; height: 3px; margin: -1px 0 0 -1px; background: var(--ink-mute); opacity: .55; }
 
   /* ---------- header ---------- */
@@ -272,7 +274,7 @@
   .scrim {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; pointer-events: none;
     height: calc(100svh - var(--top) - var(--free-q, 400px) + 90px);
-    background: linear-gradient(rgba(5, 5, 6, 0), rgba(5, 5, 6, .9) 90px, rgba(5, 5, 6, .96));
+    background: linear-gradient(rgba(5, 5, 6, 0), rgba(5, 5, 6, .94) 90px, rgba(5, 5, 6, .98));
     opacity: var(--scrim, 0);
   }
 
@@ -832,19 +834,15 @@ const progressEl = $('.progress');
 let target = 0, current = 0, stage = -1, textStage = -2;
 // a slide's text shows only near its stage; around it the devices animate on their own
 const T = {
-  text: [0.04, 0.068],     // text fully in → gone
-  scrim: [0.055, 0.115],    // the darkening under the text lingers a little longer
-  dev: [0.062, 0.162],      // device standing → away (starts leaving while the scrim is still fading)
+  text: [0.02, 0.04],      // text in place → gone
+  scrim: [0.03, 0.06],     // darkening under the text (phones, Qayd)
+  dev: [0.04, 0.14],       // device standing → moved away
+  devFade: [0.128, 0.15],  // …and fully gone before the halfway point, so two devices never meet
+  away: [0.17, 0.26],      // sculpture: fully away while a device is near, back only after it has gone
 };
 const TEXT_WINDOW = T.text[1] + 0.002;
-// minimum time (s) a full move may take, however fast the page is scrolled
-const DUR = { device: 1.4, text: 0.7, scrim: 0.9 };
 const lin = (a, b, x) => Math.min(1, Math.max(0, (x - a) / (b - a)));
-const glideState = {};
-function glide(key, to, dt, dur) {
-  const v = glideState[key] ?? to, step = dt / dur;
-  return (glideState[key] = v + Math.max(-step, Math.min(step, to - v)));
-}
+const easeInOutSine = t => (1 - Math.cos(Math.PI * t)) / 2;
 
 function maxScroll() { return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
 function readScroll() { target = Math.min(1, Math.max(0, scrollY / maxScroll())); }
@@ -870,9 +868,24 @@ function setStage(i) {
   document.body.dataset.stage = i;
   counter.textContent = String(i + 1).padStart(2, '0');
 }
+let snapping = false, lastInput = 0, travelDir = 1;
+// a whole section takes ~3 s, so every device move inside it gets ~0.7 s
+function glideTo(i) {
+  const to = Math.max(0, Math.min(3, i)), dist = Math.abs(to / 3 - target) * 3;
+  snapping = true;
+  lenis.scrollTo(maxScroll() * to / 3, { duration: 0.5 + 2.5 * Math.min(1, dist), easing: easeInOutSine, onComplete: () => { snapping = false; } });
+}
+['wheel', 'touchstart', 'touchmove', 'keydown', 'pointerdown'].forEach(type =>
+  addEventListener(type, () => { lastInput = performance.now(); if (type !== 'pointerdown') snapping = false; }, { passive: true }));
+function maybeSnap(now) {
+  if (!lenis || snapping || lenis.isScrolling || now - lastInput < 140) return;
+  const sPos = target * 3;
+  const to = travelDir > 0 ? Math.ceil(sPos - 0.1) : Math.floor(sPos + 0.1);   // a nudge under 10% springs back
+  if (Math.abs(sPos - to) > 0.002) glideTo(to);
+}
 function goTo(i) {
   const top = maxScroll() * i / 3;
-  if (lenis) lenis.scrollTo(top, { duration: 2.6, easing: t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) });
+  if (lenis) glideTo(i);
   else scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
   closeMenu();
 }
@@ -945,9 +958,6 @@ const CAM = {
   shx: [0.16, 0.0, 0.17, 0.17],   // horizontal framing (desktop), fraction of width
   shy: [0.02, 0.1, 0.04, 0.03],   // vertical framing (desktop)
   shyM: [0.19, 0.25, 0.19, 0.21],   // mobile: object in the upper half
-  // where a device takes the frame, the sculpture glides off the top and the room dims
-  awayM: [0, 1, 1, 0],               // phones: iPhone and MacBook both need the space
-  awayS: [0, 0, 1, 0],               // wider screens: only the MacBook takes its place
   env: [0.32, 0.4, 0.46, 0.36],
   rough: [0.4, 0.36, 0.28, 0.32],
   keyI: [2.5, 2.7, 1.8, 2.1],
@@ -972,7 +982,7 @@ function createGL() {
   const canvas = $('#gl');
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference: 'high-performance' });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   } catch (err) { return null; }
   if (!renderer.getContext()) return null;
 
@@ -1105,6 +1115,18 @@ function createGL() {
   });
   const tri = new THREE.BufferGeometry();
   tri.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  // the liquid background is soft, so it is drawn at half resolution and scaled up; that leaves the GPU
+  // free to draw the sculpture and the devices at the full pixel ratio
+  const bgRT = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+  const blitScene = new THREE.Scene();
+  const blit = new THREE.Mesh(tri, new THREE.ShaderMaterial({
+    uniforms: { tBg: { value: bgRT.texture } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `uniform sampler2D tBg; varying vec2 vUv; void main(){ gl_FragColor = texture2D(tBg, vUv); }`,
+    depthTest: false, depthWrite: false,
+  }));
+  blit.frustumCulled = false;
+  blitScene.add(blit);
   const bgMesh = new THREE.Mesh(tri, bgMat);
   bgMesh.frustumCulled = false;
   bgScene.add(bgMesh);
@@ -1350,7 +1372,7 @@ function createGL() {
   const setOpacity = (mats, o) => { for (const m of mats) m.opacity = o; };
   function placeDevices(s) {
     const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
-    const R = devRects.phone, M = devRects.mac, dq = s.story - 1 / 3, dw = s.story - 2 / 3;
+    const R = devRects.phone, M = devRects.mac;
     // both models sit at the origin and the lens is shifted onto their box, so each is seen head-on
     const lookAt = r => devCam.setViewOffset(W, H, W / 2 - (r.left + r.width / 2), H / 2 - (r.top + r.height / 2), W, H);
 
@@ -1378,18 +1400,20 @@ function createGL() {
       lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, aw);
       setOpacity(macMats, ow);
     }
-    return { lookAt, R, M };
     devKey.color.copy(key.color); devRim.color.copy(rim.color);
+    return { lookAt, R, M };
   }
 
-  let W = 1, H = 1, dprScale = 1;
+  let W = 1, H = 1;
   function resize(w, h) {
     W = w; H = h;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.75 : 2) * dprScale);
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.setSize(w, h);
     camera.aspect = w / h;
     devCam.aspect = w / h; devCam.updateProjectionMatrix();
-    bgMat.uniforms.uRes.value.set(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
+    const bw = Math.max(1, Math.round(w * renderer.getPixelRatio() * 0.5)), bh = Math.max(1, Math.round(h * renderer.getPixelRatio() * 0.5));
+    bgRT.setSize(bw, bh);
+    bgMat.uniforms.uRes.value.set(bw, bh);
     pMat.uniforms.uPR.value = renderer.getPixelRatio();
   }
 
@@ -1406,7 +1430,7 @@ function createGL() {
     camera.position.set(Math.sin(ang) * r, h, Math.cos(ang) * r);
     camera.lookAt(origin);
     const sx = isMobile ? 0 : mixN(CAM.shx, i, t);
-    const away = mixN(isMobile ? CAM.awayM : CAM.awayS, i, t);
+    const away = s.away;
     const sy = (isMobile ? mixN(CAM.shyM, i, t) : mixN(CAM.shy, i, t)) + away * 0.85;
     camera.setViewOffset(W, H, -sx * W, sy * H, W, H);
 
@@ -1451,8 +1475,12 @@ function createGL() {
     pu.uOpacity.value = (reduce ? 0.25 : 0.32) + s.energy * 0.45;
     setVecSRGB(pu.uColor.value, mixC(PAL.part, i, t));
 
+    renderer.setRenderTarget(bgRT);
     renderer.clear();
     renderer.render(bgScene, bgCam);
+    renderer.setRenderTarget(null);
+    renderer.clear();
+    renderer.render(blitScene, bgCam);
     renderer.render(scene, camera);
     const { lookAt, R, M } = placeDevices(s);
     const showPhone = phonePivot.visible, showMac = mac.visible;
@@ -1462,12 +1490,7 @@ function createGL() {
     if (showMac) { phonePivot.visible = false; lookAt(M); renderer.render(devScene, devCam); phonePivot.visible = showPhone; }
   }
 
-  // drops resolution a notch when a device can't keep ~40 fps
-  function degrade() {
-    if (dprScale <= 0.6) return false;
-    dprScale -= 0.2; resize(W, H); return true;
-  }
-  return { resize, render, degrade };
+  return { resize, render };
 }
 
 let gl = null;
@@ -1491,31 +1514,31 @@ mqMobile.addEventListener('change', onResize);
 onResize();
 
 /* ---------- main loop ---------- */
-const state = { p: 0, story: 0, time: 0, phase: 0, energy: 0, mx: 0, my: 0 };
-// the story (devices, text, scrim) follows the scroll with its own inertia, so a fast flick or a menu jump
-// still plays every movement over about a second instead of snapping through it
-let story = 0;
+const state = { p: 0, time: 0, phase: 0, energy: 0, mx: 0, my: 0, away: 0 };
 let last = performance.now(), prevTarget = target, vel = 0, accentHex = '', firstFrame = true;
 const accTmp = new THREE.Color();
 
 const varCache = {};
-const varHost = { '--txt': $('.slides'), '--scrim': $('.scrim'), '--q-rot': $('.device'), '--q-y': $('.device'), '--q-o': $('.device'), '--w-rot': $('.window'), '--w-o': $('.window') };
+const varHost = { '--dev': $('.grid'), '--txt': $('.slides'), '--scrim': $('.scrim'), '--q-rot': $('.device'), '--q-y': $('.device'), '--q-o': $('.device'), '--w-rot': $('.window'), '--w-o': $('.window') };
 function setVar(name, v) {
   const s = v.toFixed(3);
   if (varCache[name] !== s) { varCache[name] = s; (varHost[name] || root).style.setProperty(name, s); }
 }
 
-let slowFrames = 0, frameCheckAt = 0;
 function tick(now) {
-  if (lenis) { lenis.raf(now); target = lenis.progress; }
-  // performance watchdog: sustained slow frames lower the render resolution
-  if (gl && now - last > 25 && now - last < 200) slowFrames++;
-  if (now > frameCheckAt) { if (slowFrames > 30) gl?.degrade(); slowFrames = 0; frameCheckAt = now + 2000; }
+  if (lenis) {
+    lenis.raf(now);
+    const p = lenis.progress;
+    if (Math.abs(p - target) > 1e-5) travelDir = Math.sign(p - target);
+    target = p;
+    maybeSnap(now);
+  }
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
   state.time += dt;
 
-  current += (target - current) * (reduce ? 1 : 1 - Math.pow(lenis ? 0.012 : 0.0015, dt));
+  // Lenis already eases the scroll; without it, a light damping smooths native jumps
+  current = lenis || reduce ? target : current + (target - current) * (1 - Math.pow(0.0015, dt));
   const v = Math.abs(target - prevTarget) / Math.max(dt, 1e-3);
   prevTarget = target;
   vel += (v - vel) * (1 - Math.pow(0.02, dt));
@@ -1525,32 +1548,28 @@ function tick(now) {
   const mk = reduce ? 0 : 1 - Math.pow(0.02, dt);
   mx += ((reduce ? 0 : tmx) - mx) * (reduce ? 1 : mk);
   my += ((reduce ? 0 : tmy) - my) * (reduce ? 1 : mk);
-  story += (current - story) * (reduce ? 1 : 1 - Math.pow(0.05, dt));
-  state.mx = mx; state.my = my; state.p = current; state.story = story;
+  state.mx = mx; state.my = my; state.p = current;
 
   const near = Math.min(3, Math.round(current * 3));
   setStage(near);
-  // text: the visible slide stays until it has fully faded, only then the next one takes over
-  const sn = Math.min(3, Math.round(story * 3));
-  const shown = textStage >= 0 ? textStage : sn;
-  const gt = glide('t', lin(T.text[0], T.text[1], Math.abs(story - shown / 3)), dt, DUR.text);
-  if (gt > 0.999 || textStage < 0) {
-    const dn = Math.abs(story - sn / 3);
-    setText(dn < TEXT_WINDOW ? sn : -1);
-  }
-  setVar('--txt', 1 - smooth(0, 1, gt));
-  const gs = glide('s', lin(T.scrim[0], T.scrim[1], Math.abs(story - 1 / 3)), dt, DUR.scrim);
-  setVar('--scrim', isMobile ? 1 - smooth(0, 1, gs) : 0);
+  const dn = Math.abs(current - near / 3);
+  setText(dn < TEXT_WINDOW ? near : -1);
+  setVar('--txt', 1 - smooth(T.text[0], T.text[1], dn));
+  setVar('--scrim', isMobile ? 1 - smooth(T.scrim[0], T.scrim[1], Math.abs(current - 1 / 3)) : 0);
   progressEl.style.setProperty('--p', current.toFixed(4));
   document.body.classList.toggle('scrolled', target > 0.015);
 
-  // devices: iPhone around stage 1, MacBook around stage 2. Each move is speed-limited, then eased,
-  // and a device only fades once it has fully moved away
-  const dq = story - 1 / 3, dw = story - 2 / 3;
-  const gq = glide('q', reduce ? +(Math.abs(dq) > 0.12) : lin(T.dev[0], T.dev[1], Math.abs(dq)), dt, DUR.device);
-  const gw = glide('w', reduce ? +(Math.abs(dw) > 0.12) : lin(T.dev[0], T.dev[1], Math.abs(dw)), dt, DUR.device);
-  state.aq = smooth(0, 1, gq); state.oq = 1 - smooth(0.8, 1, gq); state.dirQ = dq < 0 ? 1 : -1;
-  state.aw = smooth(0, 1, gw); state.ow = 1 - smooth(0.8, 1, gw);
+  // devices: iPhone around stage 1, MacBook around stage 2
+  const dq = current - 1 / 3, dw = current - 2 / 3;
+  state.aq = reduce ? +(Math.abs(dq) > 0.1) : smooth(T.dev[0], T.dev[1], Math.abs(dq));
+  state.oq = 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dq));
+  state.dirQ = dq < 0 ? 1 : -1;
+  state.aw = reduce ? +(Math.abs(dw) > 0.1) : smooth(T.dev[0], T.dev[1], Math.abs(dw));
+  state.ow = 1 - smooth(T.devFade[0], T.devFade[1], Math.abs(dw));
+  // the sculpture makes room: gone before a device appears, back only once it has left
+  const pres = d => 1 - smooth(T.away[0], T.away[1], Math.abs(d));
+  state.away = isMobile ? Math.max(pres(dq), pres(dw)) : pres(dw);
+  setVar('--dev', Math.max(state.oq, state.ow));
   setVar('--q-rot', -88 * state.dirQ * state.aq);
   setVar('--q-y', state.aq);
   setVar('--q-o', state.oq);
@@ -1575,7 +1594,7 @@ function tick(now) {
 }
 
 readScroll();
-current = story = target;
+current = target;
 (document.fonts?.ready || Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(tick)));
 </script>
 <script>
