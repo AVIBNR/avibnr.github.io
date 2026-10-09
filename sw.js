@@ -1,8 +1,9 @@
 /* Avibra service worker.
    - the page (HTML) is network-first: a new deploy shows up on the next visit, the cache is only an offline fallback;
-   - Three.js (versioned URL), Google Fonts and the screenshots are cache-first and refreshed in the background. */
-const CACHE = 'avibra-v7';
-const PRECACHE = ['./', 'assets/qayd-home.webp', 'assets/wasl-home.webp'];
+   - Three.js and GSAP (assets/vendor), Google Fonts and the screenshots are cache-first and refreshed in the background. */
+const CACHE = 'avibra-v8';
+const PRECACHE = ['./', 'assets/vendor/three.module.min.js', 'assets/vendor/gsap-core.js', 'assets/vendor/environments/RoomEnvironment.js',
+  'assets/zapis-home.webp', 'assets/zapis-book.webp', 'assets/zapis-admin.webp', 'assets/qayd-home.webp', 'assets/wasl-home.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -13,7 +14,7 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-const CDN = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+const CDN = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('fetch', e => {
   const req = e.request;
