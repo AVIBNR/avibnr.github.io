@@ -55,7 +55,7 @@
   img { display: block; max-width: 100%; }
 
   /* ---------- WebGL stage (fixed behind everything) ---------- */
-  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; opacity: 0; transition: opacity 1.8s var(--ease); }
+  #gl { position: fixed; top: 0; left: 0; right: 0; width: 100%; height: 100vh; height: 100lvh; display: block; z-index: 0; opacity: 0; transition: opacity 1.8s var(--ease); }
   .gl-ready #gl { opacity: 1; }
   .fallback {
     position: fixed; inset: 0; z-index: 0; display: none;
@@ -239,7 +239,7 @@
   .g-tall .g-img { aspect-ratio: 4 / 5; }
   .gallery figcaption, .videos figcaption { margin-top: 14px; color: var(--ink-dim); font-size: 15px; }
   .gallery figcaption b, .videos figcaption b { display: block; font-weight: 400; color: var(--ink); }
-  .v-tall { grid-column: span 4; } .v-wide { grid-column: span 8; align-self: start; }
+  .v-tall { grid-column: span 5; } .v-tall + .v-tall { grid-column: 7 / span 5; }
   .v-box video { display: block; width: 100%; height: auto; background: #000; }
   .prices + .sub-title, .head + .sub-title { margin-top: 72px; }
   @media (hover: hover) and (pointer: fine) {
@@ -250,12 +250,12 @@
   @media (max-width: 900px) {
     .dirs { grid-template-columns: 1fr; }
     .dir h3 { margin-top: 24px; }
-    .g-sq, .g-wide, .v-tall, .v-wide { grid-column: span 12; }
+    .g-sq, .g-wide { grid-column: span 12; }
+    .v-tall, .v-tall + .v-tall { grid-column: span 6; }
     .g-tall { grid-column: span 6; }
-    .v-tall { max-width: 420px; }
   }
   @media (max-width: 560px) {
-    .g-tall { grid-column: span 12; }
+    .g-tall, .v-tall, .v-tall + .v-tall { grid-column: span 12; }
   }
 
   [data-channel][hidden] { display: none !important; }
@@ -485,7 +485,7 @@
       </div>
       <ul class="videos">
         <li class="v-tall"><figure><div class="v-box"><video controls playsinline preload="none" poster="assets/video/reel-cafe.jpg" width="720" height="1280"><source src="assets/video/reel-cafe.mp4" type="video/mp4"></video></div><figcaption><b data-i18n="video.v1">Reels с ведущим</b><span data-i18n="video.v1d">Съёмка, монтаж, субтитры и анимация интерфейса · 40 с</span></figcaption></figure></li>
-        <li class="v-wide"><figure><div class="v-box"><video controls playsinline preload="none" poster="assets/video/promo-cafe.jpg" width="1280" height="720"><source src="assets/video/promo-cafe.mp4" type="video/mp4"></video></div><figcaption><b data-i18n="video.v2">Рекламный ролик</b><span data-i18n="video.v2d">Моушн-дизайн без съёмки: сцены, 3D-телефон, таймеры · 57 с</span></figcaption></figure></li>
+        <li class="v-tall"><figure><div class="v-box"><video controls playsinline preload="none" poster="assets/video/short-cafe.jpg" width="720" height="1280"><source src="assets/video/short-cafe.mp4" type="video/mp4"></video></div><figcaption><b data-i18n="video.v2">Рекламный Reels</b><span data-i18n="video.v2d">Моушн-дизайн без съёмки: интерфейс, 3D-телефон, субтитры · 29 с</span></figcaption></figure></li>
       </ul>
     </div>
   </section>
@@ -680,8 +680,8 @@ const I18N = {
     "video.lead": "Монтаж Reels и рекламных роликов: субтитры, анимация текста, 3D-телефоны, инфографика и звуковые эффекты.",
     "video.v1": "Reels с ведущим",
     "video.v1d": "Съёмка, монтаж, субтитры и анимация интерфейса · 40 с",
-    "video.v2": "Рекламный ролик",
-    "video.v2d": "Моушн-дизайн без съёмки: сцены, 3D-телефон, таймеры · 57 с",
+    "video.v2": "Рекламный Reels",
+    "video.v2d": "Моушн-дизайн без съёмки: интерфейс, 3D-телефон, субтитры · 29 с",
     "svc.dev": "Разработка",
     "svc.design": "Дизайн",
     "svc.video": "Видео",
@@ -806,8 +806,8 @@ const I18N = {
     "video.lead": "Editing Reels and promo videos: captions, animated text, 3D phones, infographics and sound effects.",
     "video.v1": "Reel with a presenter",
     "video.v1d": "Shooting, editing, captions and UI animation · 40 s",
-    "video.v2": "Promo video",
-    "video.v2d": "Motion design without shooting: scenes, a 3D phone, timers · 57 s",
+    "video.v2": "Promo Reel",
+    "video.v2d": "Motion design without shooting: UI, a 3D phone, captions · 29 s",
     "svc.dev": "Development",
     "svc.design": "Design",
     "svc.video": "Video",
@@ -1548,7 +1548,8 @@ else root.classList.add('gl-devices');
 let lastW = 0, lastH = 0;
 function onResize() {
   isMobile = mqMobile.matches;
-  const w = innerWidth, h = innerHeight;
+  // the canvas is 100lvh tall: it keeps its size while the mobile toolbar slides in and out
+  const w = innerWidth, h = document.getElementById('gl').clientHeight || innerHeight;
   // mobile browsers resize on toolbar show/hide; ignore small height-only changes
   if (w === lastW && Math.abs(h - lastH) < 120 && lastW) return;
   lastW = w; lastH = h;
