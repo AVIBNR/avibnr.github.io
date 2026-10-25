@@ -1,7 +1,7 @@
 /* Avibra service worker.
    - the page (HTML) is network-first: a new deploy shows up on the next visit, the cache is only an offline fallback;
    - Three.js and GSAP (assets/vendor), Google Fonts and the screenshots are cache-first and refreshed in the background. */
-const CACHE = 'avibra-v13';
+const CACHE = 'avibra-v14';
 const PRECACHE = ['./', 'assets/vendor/three.module.min.js', 'assets/vendor/gsap-core.js', 'assets/vendor/environments/RoomEnvironment.js',
   'assets/zapis-home.webp', 'assets/zapis-book.webp', 'assets/zapis-admin.webp', 'assets/qayd-home.webp', 'assets/wasl-home.webp'];
 
@@ -22,11 +22,12 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
 
   if (req.mode === 'navigate') {
+    // each page is cached under its own address, so a visit to /radar/ never replaces the home page copy
     e.respondWith(fetch(req).then(res => {
       const copy = res.clone();
-      caches.open(CACHE).then(c => c.put('./', copy));
+      caches.open(CACHE).then(c => c.put(req, copy));
       return res;
-    }).catch(() => caches.match('./')));
+    }).catch(() => caches.match(req).then(hit => hit || caches.match('./'))));
     return;
   }
 

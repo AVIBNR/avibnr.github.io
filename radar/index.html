@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Бот с заказами для фрилансеров в Telegram · Avibra Radar</title>
+<meta name="description" content="Avibra Radar находит заказы на FL.ru, HH, Хабр Карьере и в Telegram-чатах и сразу присылает подходящие вам: разработка, дизайн, монтаж, SMM, тексты. Без рекламы исполнителей и повторов. Неделя Pro бесплатно.">
+<link rel="canonical" href="https://avibnr.github.io/radar/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Avibra Radar · заказы для фрилансеров сразу в Telegram">
+<meta property="og:description" content="Заказы с бирж и Telegram-чатов по вашему направлению, сразу после публикации. Неделя Pro бесплатно.">
+<meta property="og:image" content="https://avibnr.github.io/assets/radar-og.jpg">
+<meta property="og:url" content="https://avibnr.github.io/radar/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#11161C">
+<link rel="icon" href="../assets/radar-icon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Откуда берутся заказы?","acceptedAnswer":{"@type":"Answer","text":"Radar круглосуточно читает FL.ru, FreelanceJob, Kwork, HH.ru, Хабр Карьеру, SuperJob и несколько десятков Telegram-каналов и чатов с заказами."}},
+{"@type":"Question","name":"Чем Pro отличается от Free?","acceptedAnswer":{"@type":"Answer","text":"В Pro все подходящие заказы приходят сразу после публикации и доступны фильтры по бюджету и словам. На Free три свежих заказа в день приходят сразу, остальные через 30 минут."}},
+{"@type":"Question","name":"Сколько стоит?","acceptedAnswer":{"@type":"Answer","text":"Первая неделя Pro бесплатно. Дальше 500 ₽ за 30 дней, 1 275 ₽ за 90 дней или 4 200 ₽ за год."}},
+{"@type":"Question","name":"Будет ли реклама и спам?","acceptedAnswer":{"@type":"Answer","text":"Нет. Radar отсеивает рекламу исполнителей, массовый набор, задания за отзывы и повторы одного заказа в разных чатах."}}]}
+</script>
+<style>
+:root{--bg:#0f1318;--panel:#161c23;--ink:#f3f0e8;--dim:rgba(243,240,232,.68);--mute:rgba(243,240,232,.42);--line:rgba(243,240,232,.09);--accent:#c8a273;--pad:clamp(18px,4vw,48px)}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.55 Manrope,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 var(--pad)}
+header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.brand{display:flex;align-items:center;gap:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;font-size:13px;color:var(--accent);text-decoration:none}
+.brand img{width:34px;height:34px;border-radius:50%}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:48px 0 72px}
+h1{font-size:clamp(38px,5.6vw,64px);line-height:1.04;letter-spacing:-.02em;font-weight:800}
+.lead{margin-top:20px;font-size:clamp(17px,2vw,20px);color:var(--dim);max-width:34ch}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;gap:10px;padding:15px 22px;border-radius:14px;background:var(--ink);color:#11161c;font-weight:600;text-decoration:none;transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.note{margin-top:14px;color:var(--mute);font-size:14px}
+.hero img{width:100%;height:auto;aspect-ratio:2/1;border-radius:22px;box-shadow:0 30px 80px #0008}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}
+section{padding:56px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(26px,3.4vw,38px);letter-spacing:-.01em;font-weight:800;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid h3{font-size:18px;margin:10px 0 6px}.grid p{color:var(--dim);font-size:15px}
+.num{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#c8a27322;color:var(--accent);font-weight:800}
+.order{font-size:15px}.order b{font-size:16px}.order i{color:var(--mute);font-style:normal;font-size:13px}
+.order blockquote{margin:12px 0;padding:8px 12px;border-left:3px solid #6ab3f3;color:var(--dim);background:#0f1318;border-radius:0 10px 10px 0}
+.order .row{display:flex;gap:6px;margin-top:12px}.order .row span{flex:1;text-align:center;padding:9px 0;border-radius:10px;background:#2b5278;font-size:14px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+ul.check{list-style:none;padding:0;display:grid;gap:12px}ul.check li{display:flex;gap:12px;color:var(--dim)}ul.check li b{color:var(--ink)}
+.price{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.price .card{display:flex;flex-direction:column;gap:6px}.price strong{font-size:30px;font-weight:800}.price small{color:var(--mute)}
+.price .best{border-color:#c8a27388}
+.tag{align-self:flex-start;font-size:12px;padding:3px 9px;border-radius:999px;background:#c8a27326;color:var(--accent);font-weight:600}
+details{border-bottom:1px solid var(--line);padding:16px 0}summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none}summary::after{content:'+';float:right;color:var(--mute)}
+details[open] summary::after{content:'−'}details p{color:var(--dim);margin-top:10px}
+.final{text-align:center;padding:72px 0}.final .cta{justify-content:center}
+footer{padding:28px 0 calc(28px + env(safe-area-inset-bottom));color:var(--mute);font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line)}
+@media (max-width:820px){header .btn{padding:10px 14px;font-size:14px}.brand{letter-spacing:.12em}.hero,.split{grid-template-columns:1fr}.grid,.price{grid-template-columns:1fr}.hero{padding-top:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="./"><img src="../assets/radar-icon.jpg" alt="">Avibra Radar</a><a class="btn ghost" href="https://t.me/avibra_radar_orders">Канал с заказами</a></header>
+
+<div class="hero">
+  <div>
+    <h1>Заказы для фрилансеров. Сразу, а не через час.</h1>
+    <p class="lead">Radar читает биржи и Telegram-чаты круглосуточно и присылает в Telegram только подходящие вам заказы, пока откликов ещё мало.</p>
+    <div class="cta"><a class="btn" href="https://t.me/avibra_radar_bot?start=site">🚀 Открыть бота</a><a class="btn ghost" href="#how">Как это работает</a></div>
+    <p class="note">Неделя Pro бесплатно. Карта не нужна.</p>
+  </div>
+  <img src="../assets/radar-og.jpg" alt="Avibra Radar: заказы приходят к вам сами" width="1280" height="640">
+</div>
+
+<section id="how">
+  <h2>Как это работает</h2>
+  <div class="grid">
+    <div class="card"><div class="num">1</div><h3>Выбираете направления</h3><p>Разработка, дизайн, монтаж, SMM, тексты. Настройка занимает 20 секунд.</p></div>
+    <div class="card"><div class="num">2</div><h3>Заказы приходят сами</h3><p>FL.ru, HH, Хабр Карьера, Kwork, SuperJob и десятки Telegram-чатов. Сразу после публикации.</p></div>
+    <div class="card"><div class="num">3</div><h3>Подборка учится</h3><p>👍 и 👎 под заказами. Через пару дней лента знает, что вам интересно.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="split">
+    <div class="card order">
+      <b>💻 Лендинг на Tilda для кофейни</b><br><i>Разработка · FL.ru · 3 мин назад</i>
+      <blockquote>Нужен одностраничный сайт с меню и формой заказа. Адаптив под телефон.</blockquote>
+      💰 <b>7 000 ₽</b><br>🧭 Разовый заказ<br>✅ Отклик бесплатный<br><br>⭐ Совпадение <b>87%</b> · указан бюджет
+      <div class="row"><span>👍</span><span>👎</span><span>⭐</span><span>🙈</span></div>
+      <div class="row"><span>✍️ Готовый отклик</span><span>🚩 Реклама</span></div>
+    </div>
+    <div>
+      <h2>Только заказы. Без шума.</h2>
+      <ul class="check">
+        <li>🧹<span><b>Без рекламы исполнителей.</b> Самопродвижение, массовый набор и задания за отзывы отсеиваются.</span></li>
+        <li>🔁<span><b>Без повторов.</b> Один заказ из пяти чатов придёт один раз.</span></li>
+        <li>✍️<span><b>Готовый отклик.</b> Короткий текст под направление копируется одной кнопкой.</span></li>
+        <li>⚠️<span><b>Защита от мошенников.</b> Платное тестовое или просьбу паспорта бот подсветит.</span></li>
+        <li>💰<span><b>Фильтры.</b> Только с бюджетом, бюджет от N ₽, только бесплатный отклик, без лишних слов.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="price">
+  <h2>Цены</h2>
+  <div class="price">
+    <div class="card"><span class="tag">Free</span><strong>0 ₽</strong><small>после пробной недели</small><p style="color:var(--dim)">3 свежих заказа в день сразу, остальные через 30 минут.</p></div>
+    <div class="card"><span class="tag">Pro · 30 дней</span><strong>500 ₽</strong><small>Все заказы сразу, фильтры, до 30 уведомлений в день.</small></div>
+    <div class="card best"><span class="tag">Pro · год · −30%</span><strong>4 200 ₽</strong><small>350 ₽ в месяц. Есть ещё 90 дней за 1 275 ₽.</small></div>
+  </div>
+</section>
+
+<section id="faq">
+  <h2>Вопросы</h2>
+  <details><summary>Откуда берутся заказы?</summary><p>Radar круглосуточно читает FL.ru, FreelanceJob, Kwork, HH.ru, Хабр Карьеру, SuperJob и несколько десятков Telegram-каналов и чатов с заказами.</p></details>
+  <details><summary>Чем Pro отличается от Free?</summary><p>В Pro все подходящие заказы приходят сразу после публикации и работают фильтры. На Free три свежих заказа в день приходят сразу, остальные через 30 минут.</p></details>
+  <details><summary>Будет ли спам?</summary><p>Нет. Реклама исполнителей, массовый набор, задания за отзывы и повторы отсеиваются. Если что-то проскочит, кнопка 🚩 скроет заказ, а автора заблокирует для всех.</p></details>
+  <details><summary>Можно пригласить друга?</summary><p>Да. По вашей ссылке друг получает неделю Pro в подарок, и вы тоже. А с каждой его оплаты вам начисляется 20%.</p></details>
+</section>
+
+<div class="final">
+  <h2>Попробуйте неделю бесплатно</h2>
+  <div class="cta"><a class="btn" href="https://t.me/avibra_radar_bot?start=site">🚀 Открыть бота в Telegram</a></div>
+</div>
+
+<footer><span>© Avibra Radar</span><span><a href="https://t.me/avibra_radar_orders">Канал с заказами</a> · <a href="../">Студия Avibra</a></span></footer>
+</div>
+</body>
+</html>
