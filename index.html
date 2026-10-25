@@ -306,6 +306,14 @@
     .char, .is-in .char { filter: none; transform: none; transition-duration: .4s; transition-delay: 0s; }
     #gl { transition: none; }
   }
+
+  .radar-promo { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(20px, 4vw, 48px); align-items: center; text-decoration: none; color: inherit;
+    border: 1px solid var(--line); border-radius: 24px; padding: clamp(14px, 2vw, 22px); transition: border-color .2s; }
+  .radar-promo:hover { border-color: rgba(200, 146, 95, .5); }
+  .radar-promo img { width: 100%; height: auto; aspect-ratio: 2/1; border-radius: 16px; display: block; }
+  .radar-copy { display: flex; flex-direction: column; gap: 12px; }
+  .radar-copy .h2 { display: block; }
+  @media (max-width: 820px) { .radar-promo { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body class="cursor-out">
@@ -496,6 +504,21 @@
     </div>
   </section>
 
+  <!-- own product: Avibra Radar -->
+  <section class="section part" id="radar" data-theme="2" data-away="1" aria-labelledby="t-radar">
+    <div class="wrap">
+      <a class="radar-promo" href="radar/">
+        <img src="assets/radar-og.jpg" alt="Avibra Radar: бот с заказами для фрилансеров" data-i18n-attr="alt:radar.alt" width="1280" height="640" loading="lazy" decoding="async">
+        <span class="radar-copy">
+          <span class="kicker" data-i18n="radar.kicker">Мой продукт</span>
+          <b class="h2" id="t-radar" data-i18n="radar.title">Avibra Radar</b>
+          <span class="lead" data-i18n="radar.lead">Telegram-бот, который находит заказы для фрилансеров на биржах и в чатах и присылает их сразу после публикации.</span>
+          <span class="text-link" data-i18n="radar.more">Подробнее о боте</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
   <!-- custom work -->
   <section class="section" id="services" data-theme="1" data-away="1" aria-labelledby="t-services">
     <div class="wrap">
@@ -647,6 +670,11 @@ const I18N = {
     "nav.design": "Дизайн",
     "nav.video": "Видео",
     "nav.prices": "Цены",
+    "radar.kicker": "Мой продукт",
+    "radar.title": "Avibra Radar",
+    "radar.lead": "Telegram-бот, который находит заказы для фрилансеров на биржах и в чатах и присылает их сразу после публикации.",
+    "radar.more": "Подробнее о боте",
+    "radar.alt": "Avibra Radar: бот с заказами для фрилансеров",
     "dirs.title": "Чем могу помочь",
     "dirs.lead": "Три направления — откройте нужное. Каждую ссылку можно отправить отдельно.",
     "dirs.1.t": "Разработка",
@@ -773,6 +801,11 @@ const I18N = {
     "nav.design": "Design",
     "nav.video": "Video",
     "nav.prices": "Prices",
+    "radar.kicker": "My product",
+    "radar.title": "Avibra Radar",
+    "radar.lead": "A Telegram bot that finds freelance orders on job boards and in chats and sends them the moment they are posted.",
+    "radar.more": "About the bot",
+    "radar.alt": "Avibra Radar: a bot with freelance orders",
     "dirs.title": "What I do",
     "dirs.lead": "Three directions — open the one you need. Each link can be shared on its own.",
     "dirs.1.t": "Development",
