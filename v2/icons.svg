@@ -7,4 +7,6 @@
 <symbol id="play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.8v14.4c0 .8.9 1.3 1.6.8l11-7.2c.6-.4.6-1.2 0-1.6l-11-7.2C7.9 3.5 7 4 7 4.8Z"/></symbol>
 <symbol id="msg" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" d="M4 5.5h16v10H9l-5 4v-14Z"/></symbol>
 <symbol id="mark" viewBox="0 0 1000 1000"><g transform="translate(500 500) scale(0.82) translate(-500 -480)"><path d="M170 840L396 120L604 120L830 840L690 840L642.9 690L357.1 690L310 840ZM659.6 463L561.8 488C578.5 508.8 574.3 548.3 547.3 575.3C520.2 600.3 478.6 616.9 443.3 629.4C420.4 637.7 399.6 650.2 380.9 671C393.4 646 410 619 430.8 598.2C443.3 583.6 453.7 562.8 462 544.1C470.3 525.4 422.5 361.1 443.3 219.6C497.4 255 516.1 390.2 532.7 442.2C543.1 431.8 555.6 427.6 568.1 431.8C580.6 433.9 582.6 457.8 595.1 458.8L659.6 463Z" fill="currentColor" fill-rule="evenodd"/></g></symbol>
+<symbol id="x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="ext" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></symbol>
 </svg>

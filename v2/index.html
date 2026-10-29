@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-page="home">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,59 +12,110 @@
 <meta property="og:description" content="Монтирую Reels и короткие ролики, делаю сайты, веб-приложения и Telegram-ботов. Цена и срок до начала работы.">
 <meta property="og:image" content="https://avibnr.github.io/assets/radar-og.jpg">
 <link rel="icon" href="/v2/avibra-favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/v2/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/v2/fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/v2/style.css?v=8">
+<link rel="stylesheet" href="/v2/style.css?v=10">
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
+<div class="progress" aria-hidden="true"></div>
 <header class="bar">
   <div class="bar-in">
     <a class="logo" href="/v2/" aria-label="Avibra, на главную"><svg aria-hidden="true"><use href="/v2/icons.svg#mark"/></svg><span>Avibra</span></a>
     <nav class="switch" aria-label="Направления">
-      <a href="/v2/montazh/">Монтаж</a>
-      <a href="/v2/proekty/">Проекты</a>
+      <a href="/v2/montazh/"><span class="t">Монтаж</span></a>
+      <a href="/v2/proekty/"><span class="t">Проекты</span></a>
     </nav>
-    <button class="bar-cta" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg#msg"/></svg>Написать</button>
+    <button class="bar-cta" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg#msg"/></svg><span>Написать</span></button>
   </div>
 </header>
-
 <main>
-  <section class="hello">
-    <div class="wrap enter">
-      <h1>Монтирую ролики и делаю сайты</h1>
-      <p>Студия Avibra. Выберите, что вам нужно, там примеры работ и цены.</p>
-    </div>
-  </section>
-
-  <div class="wrap doors">
-    <a class="door door-video" href="/v2/montazh/">
-      <div class="strip" aria-hidden="true"><i style="background-image:url(/assets/video/short-cover.jpg)"></i><i style="background-image:url(/assets/zapis-home.webp)"></i><i style="background-image:url(/assets/video/reel-poster-v2.jpg)"></i><i style="background-image:url(/assets/design/carousel-01-oblozhka.webp)"></i><i style="background-image:url(/assets/qayd-home.webp)"></i><i style="background-image:url(/assets/design/carousel-04-gotovyi-zakaz.webp)"></i><i style="background-image:url(/assets/video/short-cover.jpg)"></i><i style="background-image:url(/assets/zapis-book.webp)"></i></div>
-      <div class="shade"></div>
-      <h2>Монтаж</h2>
-      <p class="what">Reels, Shorts и TikTok: вырежу паузы, добавлю субтитры, зумы и звуки, чтобы досматривали до конца.</p>
-      <div class="from"><div><b>от 1 000 ₽</b><small>за ролик, готово за 1 день</small></div><span class="go"><svg aria-hidden="true"><use href="/v2/icons.svg#arr"/></svg></span></div>
-    </a>
-    <a class="door door-dev" href="/v2/proekty/">
-      <div class="screens" aria-hidden="true">
-        <img src="/assets/qayd-home.webp" alt="" loading="lazy">
-        <img src="/assets/zapis-home.webp" alt="" loading="lazy">
-        <img src="/assets/zapis-book.webp" alt="" loading="lazy">
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-text">
+      <h1><span class="w" style="--i:0"><span>Монтирую</span></span> <span class="w" style="--i:1"><span>ролики</span></span> <span class="w" style="--i:2"><span>и</span></span> <span class="w" style="--i:3"><span>делаю</span></span> <span class="w" style="--i:4"><span>сайты</span></span></h1>
+      <p class="lede">Студия Avibra. Ролики, которые досматривают до конца, и сайты, которыми пользуются настоящие люди.</p>
+      <div class="tabs" role="tablist" aria-label="Что вам нужно">
+        <button role="tab" id="tab-m" aria-controls="pane-m" aria-selected="true" type="button">Монтаж</button>
+        <button role="tab" id="tab-p" aria-controls="pane-p" aria-selected="false" type="button" tabindex="-1">Проекты</button>
+        <span class="tabs-pill" aria-hidden="true"></span>
       </div>
-      <div class="shade"></div>
-      <h2>Проекты</h2>
-      <p class="what">Сайты, веб-приложения, Telegram-боты и Mini Apps, дизайн. Мои продукты работают у реальных людей.</p>
-      <div class="from"><div><b>от 1 500 ₽</b><small>правки, от 3 500 ₽ лендинг</small></div><span class="go"><svg aria-hidden="true"><use href="/v2/icons.svg#arr"/></svg></span></div>
-    </a>
+      <div class="pane-text" id="pane-m" role="tabpanel" aria-labelledby="tab-m">
+        <p>Reels, Shorts и TikTok из сырого видео с телефона: без пауз, с субтитрами, зумами и звуком.</p>
+        <div class="row"><a class="btn btn-main" href="/v2/montazh/">Смотреть работы и цены</a><span class="from">от 1 000 ₽ за ролик</span></div>
+      </div>
+      <div class="pane-text" id="pane-p" role="tabpanel" aria-labelledby="tab-p" hidden>
+        <p>Сайты, веб-приложения, Telegram-боты и Mini Apps. Мои продукты работают у реальных людей, их можно открыть.</p>
+        <div class="row"><a class="btn btn-main" href="/v2/proekty/">Смотреть проекты и цены</a><span class="from">лендинг от 3 500 ₽</span></div>
+      </div>
+    </div>
+    <div class="stage" data-show="m">
+      <div class="stage-m"><div class="editor" data-len="10.0">
+  <div class="phone">
+    <video src="/assets/video/hero-loop.mp4" poster="/assets/video/hero-poster.jpg" muted loop playsinline autoplay preload="auto" aria-label="Фрагмент Reels, смонтированного в Avibra"></video>
+    <span class="cap" aria-hidden="true"></span>
   </div>
+  <div class="tl" aria-hidden="true">
+    <div class="tl-top"><span class="rec"></span><span class="tc">00:00:00</span><span class="tl-name">reels_cafe_final.mp4</span></div>
+    <div class="ruler"><span style="left:0.00%">00:00</span><span style="left:20.00%">00:02</span><span style="left:40.00%">00:04</span><span style="left:60.00%">00:06</span><span style="left:80.00%">00:08</span></div>
+    <div class="track t"><b>T</b><div class="lane"><span class="sub" data-a="0.0" data-b="1.92" style="left:0.00%;width:19.20%">А меню можете скинуть?</span><span class="sub" data-a="2.3" data-b="3.22" style="left:23.00%;width:9.20%">А сколько ждать?</span><span class="sub" data-a="3.66" data-b="4.58" style="left:36.60%;width:9.20%">А доставка есть?</span><span class="sub" data-a="4.9" data-b="5.7" style="left:49.00%;width:8.00%">Знакомая ситуация</span><span class="sub" data-a="5.7" data-b="7.12" style="left:57.00%;width:14.20%">для многих заведений,</span><span class="sub" data-a="7.22" data-b="8.87" style="left:72.20%;width:16.50%">причём на каждое такое сообщение</span><span class="sub" data-a="8.87" data-b="9.86" style="left:88.70%;width:9.90%">нужно отвечать.</span></div></div>
+    <div class="track v"><b>V</b><div class="lane"><div class="film" style="background-image:url(/assets/video/hero-strip.jpg)"></div><i style="left:4.50%"></i><i style="left:21.00%"></i><i style="left:34.50%"></i><i style="left:47.50%"></i><i style="left:71.70%"></i><i style="left:88.70%"></i></div></div>
+    <div class="track a"><b>A</b><div class="lane"><svg class="wave" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><rect x="0.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="2.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="4.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="6.3" y="13.7" width="1.4" height="12.6" rx=".7"/><rect x="8.3" y="3.3" width="1.4" height="33.5" rx=".7"/><rect x="10.3" y="6.9" width="1.4" height="26.3" rx=".7"/><rect x="12.3" y="10.8" width="1.4" height="18.4" rx=".7"/><rect x="14.3" y="10.5" width="1.4" height="19.1" rx=".7"/><rect x="16.3" y="2.4" width="1.4" height="35.3" rx=".7"/><rect x="18.3" y="3.1" width="1.4" height="33.8" rx=".7"/><rect x="20.3" y="2.0" width="1.4" height="36.0" rx=".7"/><rect x="22.3" y="2.2" width="1.4" height="35.6" rx=".7"/><rect x="24.3" y="10.5" width="1.4" height="19.1" rx=".7"/><rect x="26.3" y="11.0" width="1.4" height="18.0" rx=".7"/><rect x="28.3" y="2.7" width="1.4" height="34.6" rx=".7"/><rect x="30.3" y="17.5" width="1.4" height="5.0" rx=".7"/><rect x="32.3" y="12.6" width="1.4" height="14.8" rx=".7"/><rect x="34.3" y="10.3" width="1.4" height="19.4" rx=".7"/><rect x="36.3" y="13.5" width="1.4" height="13.0" rx=".7"/><rect x="38.3" y="17.8" width="1.4" height="4.3" rx=".7"/><rect x="40.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="42.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="44.3" y="13.5" width="1.4" height="13.0" rx=".7"/><rect x="46.3" y="9.6" width="1.4" height="20.9" rx=".7"/><rect x="48.3" y="17.5" width="1.4" height="5.0" rx=".7"/><rect x="50.3" y="9.9" width="1.4" height="20.2" rx=".7"/><rect x="52.3" y="10.8" width="1.4" height="18.4" rx=".7"/><rect x="54.3" y="6.1" width="1.4" height="27.7" rx=".7"/><rect x="56.3" y="12.4" width="1.4" height="15.1" rx=".7"/><rect x="58.3" y="2.5" width="1.4" height="34.9" rx=".7"/><rect x="60.3" y="6.7" width="1.4" height="26.6" rx=".7"/><rect x="62.3" y="17.3" width="1.4" height="5.4" rx=".7"/><rect x="64.3" y="18.6" width="1.4" height="2.9" rx=".7"/><rect x="66.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="68.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="70.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="72.3" y="13.9" width="1.4" height="12.2" rx=".7"/><rect x="74.3" y="8.1" width="1.4" height="23.8" rx=".7"/><rect x="76.3" y="7.6" width="1.4" height="24.8" rx=".7"/><rect x="78.3" y="5.6" width="1.4" height="28.8" rx=".7"/><rect x="80.3" y="7.4" width="1.4" height="25.2" rx=".7"/><rect x="82.3" y="11.2" width="1.4" height="17.6" rx=".7"/><rect x="84.3" y="8.1" width="1.4" height="23.8" rx=".7"/><rect x="86.3" y="13.0" width="1.4" height="14.0" rx=".7"/><rect x="88.3" y="12.4" width="1.4" height="15.1" rx=".7"/><rect x="90.3" y="17.8" width="1.4" height="4.3" rx=".7"/><rect x="92.3" y="18.2" width="1.4" height="3.6" rx=".7"/><rect x="94.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="96.3" y="19.3" width="1.4" height="1.4" rx=".7"/><rect x="98.3" y="15.5" width="1.4" height="9.0" rx=".7"/><rect x="100.3" y="8.1" width="1.4" height="23.8" rx=".7"/><rect x="102.3" y="9.6" width="1.4" height="20.9" rx=".7"/><rect x="104.3" y="4.0" width="1.4" height="32.0" rx=".7"/><rect x="106.3" y="9.0" width="1.4" height="22.0" rx=".7"/><rect x="108.3" y="7.6" width="1.4" height="24.8" rx=".7"/><rect x="110.3" y="12.1" width="1.4" height="15.8" rx=".7"/><rect x="112.3" y="14.1" width="1.4" height="11.9" rx=".7"/><rect x="114.3" y="7.9" width="1.4" height="24.1" rx=".7"/><rect x="116.3" y="8.1" width="1.4" height="23.8" rx=".7"/><rect x="118.3" y="9.4" width="1.4" height="21.2" rx=".7"/><rect x="120.3" y="9.7" width="1.4" height="20.5" rx=".7"/><rect x="122.3" y="9.2" width="1.4" height="21.6" rx=".7"/><rect x="124.3" y="13.5" width="1.4" height="13.0" rx=".7"/><rect x="126.3" y="10.8" width="1.4" height="18.4" rx=".7"/><rect x="128.3" y="12.4" width="1.4" height="15.1" rx=".7"/><rect x="130.3" y="11.4" width="1.4" height="17.3" rx=".7"/><rect x="132.3" y="9.6" width="1.4" height="20.9" rx=".7"/><rect x="134.3" y="11.7" width="1.4" height="16.6" rx=".7"/><rect x="136.3" y="14.4" width="1.4" height="11.2" rx=".7"/><rect x="138.3" y="11.4" width="1.4" height="17.3" rx=".7"/><rect x="140.3" y="13.3" width="1.4" height="13.3" rx=".7"/><rect x="142.3" y="12.8" width="1.4" height="14.4" rx=".7"/><rect x="144.3" y="15.0" width="1.4" height="10.1" rx=".7"/><rect x="146.3" y="11.9" width="1.4" height="16.2" rx=".7"/><rect x="148.3" y="10.1" width="1.4" height="19.8" rx=".7"/><rect x="150.3" y="11.2" width="1.4" height="17.6" rx=".7"/><rect x="152.3" y="3.1" width="1.4" height="33.8" rx=".7"/><rect x="154.3" y="3.8" width="1.4" height="32.4" rx=".7"/><rect x="156.3" y="9.7" width="1.4" height="20.5" rx=".7"/><rect x="158.3" y="6.9" width="1.4" height="26.3" rx=".7"/><rect x="160.3" y="10.1" width="1.4" height="19.8" rx=".7"/><rect x="162.3" y="7.8" width="1.4" height="24.5" rx=".7"/><rect x="164.3" y="8.1" width="1.4" height="23.8" rx=".7"/><rect x="166.3" y="15.0" width="1.4" height="10.1" rx=".7"/><rect x="168.3" y="9.7" width="1.4" height="20.5" rx=".7"/><rect x="170.3" y="12.1" width="1.4" height="15.8" rx=".7"/><rect x="172.3" y="14.4" width="1.4" height="11.2" rx=".7"/><rect x="174.3" y="14.1" width="1.4" height="11.9" rx=".7"/><rect x="176.3" y="13.2" width="1.4" height="13.7" rx=".7"/><rect x="178.3" y="13.2" width="1.4" height="13.7" rx=".7"/><rect x="180.3" y="13.7" width="1.4" height="12.6" rx=".7"/><rect x="182.3" y="14.2" width="1.4" height="11.5" rx=".7"/><rect x="184.3" y="11.7" width="1.4" height="16.6" rx=".7"/><rect x="186.3" y="12.1" width="1.4" height="15.8" rx=".7"/><rect x="188.3" y="13.9" width="1.4" height="12.2" rx=".7"/><rect x="190.3" y="11.0" width="1.4" height="18.0" rx=".7"/><rect x="192.3" y="5.4" width="1.4" height="29.2" rx=".7"/><rect x="194.3" y="10.3" width="1.4" height="19.4" rx=".7"/><rect x="196.3" y="18.2" width="1.4" height="3.6" rx=".7"/><rect x="198.3" y="16.6" width="1.4" height="6.8" rx=".7"/></svg></div></div>
+    <div class="head"><span></span></div>
+  </div>
+</div>
+</div>
+      <div class="stage-p"><div class="fan" aria-label="Экраны моих проектов">
+  <div class="fan-in"><figure style="--k:0"><img src="/assets/zapis-home.webp" alt="Zapis: онлайн-запись в автосервис" width="778" height="1688" loading="lazy"></figure><figure style="--k:1"><img src="/assets/qayd-home.webp" alt="Qayd: учёт для магазина в Telegram" width="778" height="1688" loading="lazy"></figure><figure style="--k:2"><img src="/assets/zapis-book.webp" alt="Zapis: выбор свободного времени" width="778" height="1688" loading="lazy"></figure><figure style="--k:3"><img src="/assets/zapis-admin.webp" alt="Zapis: записи у владельца" width="778" height="1688" loading="lazy"></figure></div>
+  <p class="fan-cap"><b>Zapis</b><span>онлайн-запись в автосервис</span></p>
+</div>
+</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head"><h2>Последние работы</h2><a class="more" href="/v2/montazh/#works">Все ролики</a></div>
+    <div class="works">
+<figure class="work tall">
+  <button class="work-play" type="button" data-src="/assets/video/reel-cafe.mp4" data-kind="tall" aria-label="Смотреть со звуком: Reels с ведущим">
+    <img src="/assets/video/reel-poster-v2.jpg" alt="" loading="lazy">
+    <span class="dur">0:40</span>
+    <span class="play"><svg aria-hidden="true"><use href="/v2/icons.svg#play"/></svg></span>
+  </button>
+  <figcaption><b>Reels с ведущим</b><span>Вырезка пауз, субтитры, анимация интерфейса</span></figcaption>
+</figure>
+<figure class="work wide">
+  <button class="work-play" type="button" data-src="/assets/video/guide-demo.mp4" data-kind="wide" aria-label="Смотреть со звуком: Видеоинструкция по сайту">
+    <img src="/assets/video/guide-poster.jpg" alt="" loading="lazy">
+    <span class="dur">0:40</span>
+    <span class="play"><svg aria-hidden="true"><use href="/v2/icons.svg#play"/></svg></span>
+  </button>
+  <figcaption><b>Видеоинструкция по сайту</b><span>Скриншоты, курсор, зумы, английская озвучка</span></figcaption>
+</figure>
+<figure class="work tall">
+  <button class="work-play" type="button" data-src="/assets/video/short-cafe.mp4" data-kind="tall" aria-label="Смотреть со звуком: Реклама без съёмки">
+    <img src="/assets/video/short-cover.jpg" alt="" loading="lazy">
+    <span class="dur">0:29</span>
+    <span class="play"><svg aria-hidden="true"><use href="/v2/icons.svg#play"/></svg></span>
+  </button>
+  <figcaption><b>Реклама без съёмки</b><span>Моушн, 3D-телефон, текст по ритму</span></figcaption>
+</figure>
+</div>
+
+  </div>
+</section>
 </main>
 <section class="contact" id="contact">
   <div class="wrap">
     <h2>Есть задача?</h2>
-    <p class="sub">Напишите пару фраз о том, что нужно. Отвечу, уточню детали и назову цену и срок до начала работы.</p>
+    <p>Напишите пару фраз о том, что нужно. Отвечу, уточню детали и назову цену и срок до начала работы.</p>
     <div class="links">
-      <a class="main" href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><div><b>Telegram</b><span>@theavibra</span></div></a>
-      <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><div><b>WhatsApp</b><span>+7 933 215-64-71</span></div></a>
-      <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><div><b>Instagram</b><span>@theavibra</span></div></a>
-      <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><div><b>Канал в Telegram</b><span>Работы и процесс</span></div></a>
+      <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
+      <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
+      <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
+      <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
     </div>
   </div>
 </section>
@@ -80,11 +131,16 @@
 <div class="sheet" role="dialog" aria-label="Как связаться">
   <div class="grab"></div>
   <h3>Где вам удобнее?</h3>
-  <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><div><b>Telegram</b><span>@theavibra</span></div></a>
-  <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><div><b>WhatsApp</b><span>+7 933 215-64-71</span></div></a>
-  <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><div><b>Instagram</b><span>@theavibra</span></div></a>
-  <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><div><b>Канал в Telegram</b><span>Работы и процесс</span></div></a>
+  <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
+  <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
+  <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
+  <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
 </div>
-<script src="/v2/main.js?v=8" defer></script>
+
+<dialog class="lb" aria-label="Просмотр видео">
+  <button class="lb-x" type="button" aria-label="Закрыть"><svg aria-hidden="true"><use href="/v2/icons.svg#x"/></svg></button>
+  <div class="lb-box"></div>
+</dialog>
+<script src="/v2/main.js?v=10" defer></script>
 </body>
 </html>
