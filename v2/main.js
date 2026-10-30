@@ -127,3 +127,70 @@ document.querySelectorAll('.work-play').forEach(btn => {
   });
   btn.addEventListener('pointerleave', () => { if (pv) { pv.pause(); pv.classList.remove('on'); } });
 });
+
+// header gets a hairline once the page moves
+const bar = document.querySelector('.bar');
+const onScroll = () => bar && bar.classList.toggle('scrolled', scrollY > 8);
+addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+// scroll reveal: blocks are cut in as they reach the screen, siblings one after another
+if (!still && 'IntersectionObserver' in window) {
+  const groups = ['.sec-head h2', '.sec-head p', '.sec-head .more', '.work', '.inside > div', '.tier', '.deals', '.prow', '.proj', '.gal figure', '.contact h2', '.contact > .wrap > p', '.links a'];
+  const items = document.querySelectorAll(groups.join(','));
+  // a fully clipped heading counts as invisible to the observer, so each block is watched through its parent
+  const byTrigger = new Map();
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    io.unobserve(e.target);
+    (byTrigger.get(e.target) || []).forEach(el => {
+      el.classList.add('in');
+      // once shown, hand the element back to its own hover transitions
+      setTimeout(() => el.classList.remove('rv', 'in'), 1400 + (+el.style.getPropertyValue('--d') || 0) * 90);
+    });
+    byTrigger.delete(e.target);
+  }), { rootMargin: '0px 0px -8% 0px', threshold: .05 });
+  items.forEach(el => {
+    const sibs = [...el.parentElement.children].filter(c => c.matches(groups.join(',')));
+    el.style.setProperty('--d', Math.min(sibs.indexOf(el), 5));
+    el.classList.add('rv');
+    const trigger = el.matches('.sec-head *, .contact h2, .contact > .wrap > p') ? el.parentElement : el;
+    if (!byTrigger.has(trigger)) { byTrigger.set(trigger, []); io.observe(trigger); }
+    byTrigger.get(trigger).push(el);
+  });
+  // safety net: some browsers deliver observer callbacks late; a plain position check on scroll never misses
+  let queued = false;
+  const sweep = () => {
+    queued = false;
+    byTrigger.forEach((els, trigger) => {
+      if (trigger.getBoundingClientRect().top < innerHeight * .95) { io.unobserve(trigger); byTrigger.delete(trigger); els.forEach(el => { el.classList.add('in'); setTimeout(() => el.classList.remove('rv', 'in'), 1400 + (+el.style.getPropertyValue('--d') || 0) * 90); }); }
+    });
+  };
+  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } }, { passive: true });
+  setTimeout(sweep, 300);
+  // the process line draws itself, markers light up in turn
+  const sio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); sio.unobserve(e.target); } }), { threshold: .4 });
+  document.querySelectorAll('.steps').forEach(s => { [...s.children].forEach((li, i) => li.style.setProperty('--d', i)); sio.observe(s); });
+} else {
+  document.querySelectorAll('.steps').forEach(s => s.classList.add('in'));
+}
+
+// the editor window and the phone fan lean slightly towards the mouse
+if (finePointer && !still) {
+  document.querySelectorAll('.stage').forEach(stage => {
+    stage.addEventListener('pointermove', e => {
+      const r = stage.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      stage.style.setProperty('--ry', (x * 8).toFixed(2) + 'deg');
+      stage.style.setProperty('--rx', (-y * 6).toFixed(2) + 'deg');
+    });
+    stage.addEventListener('pointerleave', () => { stage.style.setProperty('--ry', '0deg'); stage.style.setProperty('--rx', '0deg'); });
+  });
+  // primary buttons pull a little towards the cursor
+  document.querySelectorAll('.btn-main, .bar-cta').forEach(b => {
+    b.addEventListener('pointermove', e => {
+      const r = b.getBoundingClientRect();
+      b.style.transform = `translate(${((e.clientX - r.left) / r.width - .5) * 8}px, ${((e.clientY - r.top) / r.height - .5) * 6}px)`;
+    });
+    b.addEventListener('pointerleave', () => { b.style.transform = ''; });
+  });
+}

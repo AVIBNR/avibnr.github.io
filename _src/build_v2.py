@@ -4,7 +4,7 @@ import os
 SITE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 B = '/v2/'  # page links; static files always live in /v2/
 ROBOTS = ''
-V = '10'
+V = '12'
 I = '/v2/icons.svg'
 A = '/assets'
 
@@ -34,8 +34,8 @@ def head(title, desc, page):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#151B22">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#F3F4F6">
+<meta name="color-scheme" content="light">
 {ROBOTS}
 <title>{title}</title>
 <meta name="description" content="{desc}">
@@ -237,6 +237,7 @@ def home():
     </div>
   </div>
 </section>
+{marquee(['Reels и Shorts', 'Субтитры', 'Монтаж говорящей головы', 'Реклама для кафе и салонов', 'Сайты и лендинги', 'Telegram-боты', 'Mini Apps', 'Дизайн'])}
 
 <section class="sec">
   <div class="wrap">
@@ -284,6 +285,12 @@ def tiers():
     return '<div class="tiers">\n' + '\n'.join(out) + '\n</div>\n'
 
 
+def marquee(items):
+    # Two identical halves so the strip loops without a seam; screen readers get the list once.
+    half = ''.join(f'<span>{t}</span>' for t in items)
+    return f'<div class="marquee" aria-label="{", ".join(items)}"><div class="marquee-track" aria-hidden="true">{half}{half}</div></div>'
+
+
 def deals(items):
     return '<div class="deals">' + ''.join(f'<p><b>{a}</b><span>{b}</span></p>' for a, b in items) + '</div>\n'
 
@@ -313,6 +320,7 @@ def montazh():
     <div class="stage" data-show="m"><div class="stage-m">{editor()}</div></div>
   </div>
 </section>
+{marquee(['Reels', 'Shorts', 'TikTok', 'Субтитры', 'Вырезаю паузы и оговорки', 'Цветокоррекция', 'Обложки', 'Рекламные ролики'])}
 
 <section class="sec" id="works">
   <div class="wrap">
@@ -437,6 +445,7 @@ def proekty():
     <div class="stage" data-show="p"><div class="stage-p">{fan()}</div></div>
   </div>
 </section>
+{marquee(['Сайты и лендинги', 'Веб-приложения', 'Telegram-боты', 'Mini Apps', 'Онлайн-запись', 'Приём заказов', 'Программы для Mac и Windows', 'Дизайн'])}
 
 <section class="sec">
   <div class="wrap">
