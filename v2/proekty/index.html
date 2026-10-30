@@ -14,19 +14,20 @@
 <link rel="icon" href="/v2/avibra-favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/v2/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/v2/fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/v2/style.css?v=14">
-<script>document.documentElement.classList.add('js')</script>
+<link rel="stylesheet" href="/v2/style.css?v=15">
+<script>(function(d){d.classList.add('js');var t;try{t=localStorage.getItem('theme')}catch(e){}d.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t)d.dataset.themeFixed='1'})(document.documentElement)</script>
 </head>
 <body>
 <div class="progress" aria-hidden="true"></div>
 <header class="bar">
   <div class="bar-in">
-    <a class="logo" href="/v2/" aria-label="Avibra, на главную"><svg aria-hidden="true"><use href="/v2/icons.svg#mark"/></svg><span>Avibra</span></a>
+    <a class="logo" href="/v2/" aria-label="Avibra, на главную"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#mark"/></svg><span>Avibra</span></a>
     <nav class="switch" aria-label="Направления">
       <a href="/v2/montazh/"><span class="t">Монтаж</span></a>
       <a href="/v2/proekty/" aria-current="page"><span class="pill"></span><span class="t">Проекты</span></a>
     </nav>
-    <button class="bar-cta" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg#msg"/></svg><span>Написать</span></button>
+    <button class="theme" type="button" aria-label="Сменить тему" title="Сменить тему"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#sun"/></svg><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#moon"/></svg></button>
+    <button class="bar-cta" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#msg"/></svg><span>Написать</span></button>
   </div>
 </header>
 <main>
@@ -36,13 +37,13 @@
       <h1><span class="w" style="--i:0"><span>Сайты,</span></span> <span class="w" style="--i:1"><span>приложения</span></span> <span class="w" style="--i:2"><span>и</span></span> <span class="w" style="--i:3"><span>боты</span></span></h1>
       <p class="lede">От макета до запуска, проверяю сам на телефоне и компьютере. Ниже мои проекты: они работают на самом деле, их можно открыть.</p>
       <div class="row">
-        <button class="btn btn-main" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg#msg"/></svg>Обсудить задачу</button>
+        <button class="btn btn-main" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#msg"/></svg>Обсудить задачу</button>
         <a class="btn" href="#price">Цены</a>
       </div>
       <p class="facts"><span>Сайты и лендинги</span><span>Веб-приложения</span><span>Telegram-боты</span><span>Mini Apps</span><span>Программы для ПК</span><span>Дизайн</span></p>
     </div>
     <div class="stage" data-show="p"><div class="stage-p"><div class="fan" aria-label="Экраны моих проектов">
-  <div class="fan-in"><figure style="--k:0"><img src="/assets/zapis-home.webp" alt="Онлайн-запись: страница автосервиса" width="778" height="1688" loading="lazy"></figure><figure style="--k:1"><img src="/assets/qayd-home.webp" alt="Qayd: учёт для магазина в Telegram" width="778" height="1688" loading="lazy"></figure><figure style="--k:2"><img src="/assets/zapis-book.webp" alt="Онлайн-запись: выбор свободного времени" width="778" height="1688" loading="lazy"></figure><figure style="--k:3"><img src="/assets/zapis-admin.webp" alt="Онлайн-запись: записи у владельца" width="778" height="1688" loading="lazy"></figure></div>
+  <div class="fan-in"><figure style="--k:0"><img src="/assets/zapis-home.webp" alt="Онлайн-запись: страница автосервиса" width="778" height="1688" loading="lazy" decoding="async"></figure><figure style="--k:1"><img src="/assets/qayd-home.webp" alt="Qayd: учёт для магазина в Telegram" width="778" height="1688" loading="lazy" decoding="async"></figure><figure style="--k:2"><img src="/assets/zakaz-menu.webp" alt="Приём заказов: меню кафе по QR-коду" width="778" height="1688" loading="lazy" decoding="async"></figure><figure style="--k:3"><img src="/assets/zakaz-status.webp" alt="Приём заказов: статус заказа у гостя" width="778" height="1688" loading="lazy" decoding="async"></figure></div>
   <p class="fan-cap"><b>Онлайн-запись</b><span>страница автосервиса</span></p>
 </div>
 </div></div>
@@ -55,19 +56,23 @@
     <div class="sec-head"><h2>Проекты</h2><p>Свои продукты, которыми пользуются каждый день.</p></div>
     <article class="proj">
   <div class="proj-text"><p class="tag">Для автосервисов и шиномонтажей</p><h3>Онлайн-запись клиентов</h3><p class="about">Клиент открывает ссылку, выбирает услугу и время и записывается сам, без звонка. Все записи у владельца в телефоне.</p><ul><li>Страница сервиса с ценами, адресом и кнопкой звонка</li><li>Свободное время считается само</li><li>Уведомление о каждой новой записи</li><li>Работает в браузере, скачивать ничего не нужно</li></ul><p class="pprice">5 000 ₽ один раз<small>первая неделя бесплатно, без абонентской платы</small></p><div class="row"><a class="btn btn-main" href="https://zapis-avibra.netlify.app" target="_blank" rel="noopener">Открыть демо</a><a class="btn" href="https://wa.me/79332156471" target="_blank" rel="noopener">Хочу такую</a></div></div>
-  <div class="proj-media phones"><img src="/assets/zapis-home.webp" alt="Онлайн-запись клиентов" loading="lazy"><img src="/assets/zapis-book.webp" alt="Онлайн-запись клиентов" loading="lazy"><img src="/assets/zapis-admin.webp" alt="Онлайн-запись клиентов" loading="lazy"></div>
+  <div class="proj-media phones"><img src="/assets/zapis-home.webp" alt="Онлайн-запись клиентов" loading="lazy" decoding="async"><img src="/assets/zapis-book.webp" alt="Онлайн-запись клиентов" loading="lazy" decoding="async"><img src="/assets/zapis-admin.webp" alt="Онлайн-запись клиентов" loading="lazy" decoding="async"></div>
+</article>
+<article class="proj">
+  <div class="proj-text"><p class="tag">Для кафе и ресторанов</p><h3>Приём заказов онлайн</h3><p class="about">Гость открывает меню по ссылке или QR-коду, собирает заказ и выбирает доставку или самовывоз. Заказ сразу приходит заведению, а гость видит, на каком он этапе.</p><ul><li>Меню с фото, добавками и ценами</li><li>Доставка, самовывоз и оплата онлайн</li><li>Статус заказа у гостя в реальном времени</li><li>Панель заведения: принять заказ, указать время, отметить готовность</li></ul><div class="row"><a class="btn btn-main" href="https://zakaz-r2g.pages.dev/sushi" target="_blank" rel="noopener">Открыть демо</a><a class="btn" href="https://wa.me/79332156471" target="_blank" rel="noopener">Хочу такое</a></div></div>
+  <div class="proj-media phones"><img src="/assets/zakaz-menu.webp" alt="Приём заказов онлайн" loading="lazy" decoding="async"><img src="/assets/zakaz-item.webp" alt="Приём заказов онлайн" loading="lazy" decoding="async"><img src="/assets/zakaz-status.webp" alt="Приём заказов онлайн" loading="lazy" decoding="async"></div>
 </article>
 <article class="proj">
   <div class="proj-text"><p class="tag">Telegram Mini App</p><h3>Qayd, учёт для магазина</h3><p class="about">Товары, остатки, продажи, финансы и работа команды прямо в Telegram. Каждый день работает в настоящем магазине, есть версия для браузера.</p><ul><li>Продажи и остатки в реальном времени</li><li>Роли для владельца и продавцов</li><li>Отчёты по выручке и расходам</li></ul></div>
-  <div class="proj-media phones one"><img src="/assets/qayd-home.webp" alt="Qayd, учёт для магазина" loading="lazy"></div>
+  <div class="proj-media phones one"><img src="/assets/qayd-home.webp" alt="Qayd, учёт для магазина" loading="lazy" decoding="async"></div>
 </article>
 <article class="proj">
   <div class="proj-text"><p class="tag">Программа для Mac и Windows</p><h3>Wasl, два компьютера как один</h3><p class="about">Одна мышь и клавиатура для Mac и Windows, общий буфер обмена, файлы и звук по домашней сети.</p><div class="row"><a class="btn" href="https://github.com/AVIBNR/wasl-releases/releases/latest" target="_blank" rel="noopener">Скачать Wasl</a></div></div>
-  <div class="proj-media desk"><img src="/assets/wasl-home.webp" alt="Wasl, два компьютера как один" loading="lazy"></div>
+  <div class="proj-media desk"><img src="/assets/wasl-home.webp" alt="Wasl, два компьютера как один" loading="lazy" decoding="async"></div>
 </article>
 <article class="proj">
   <div class="proj-text"><p class="tag">Telegram-бот</p><h3>Avibra Radar</h3><p class="about">Находит заказы для фрилансеров на биржах и в каналах и присылает их в первые минуты после публикации, пока откликов мало.</p><div class="row"><a class="btn" href="/radar/" >Подробнее о боте</a></div></div>
-  <div class="proj-media icon"><img src="/assets/radar-icon.jpg" alt="Avibra Radar" loading="lazy"></div>
+  <div class="proj-media icon"><img src="/assets/radar-icon.jpg" alt="Avibra Radar" loading="lazy" decoding="async"></div>
 </article>
   </div>
 </section>
@@ -76,10 +81,10 @@
   <div class="wrap">
     <div class="sec-head"><h2>Дизайн</h2><p>Логотипы, баннеры и карусели для соцсетей, в одном стиле и с расчётом на телефон.</p></div>
     <div class="gal">
-      <figure><img src="/assets/design/avibra-logo.webp" alt="Логотип Avibra" loading="lazy" width="900" height="900"><figcaption>Логотип и фирменный стиль</figcaption></figure>
-      <figure><img src="/assets/design/carousel-01-oblozhka.webp" alt="Обложка карусели" loading="lazy" width="900" height="1125"><figcaption>Карусель, обложка</figcaption></figure>
-      <figure><img src="/assets/design/carousel-06-vashe-menyu.webp" alt="Слайд карусели" loading="lazy" width="900" height="1125"><figcaption>Карусель, слайд</figcaption></figure>
-      <figure class="wide"><img src="/assets/design/avibra-banner.webp" alt="Баннер профиля" loading="lazy" width="1600" height="800"><figcaption>Баннер профиля для соцсетей</figcaption></figure>
+      <figure><img src="/assets/design/avibra-logo.webp" alt="Логотип Avibra" loading="lazy" decoding="async" width="900" height="900"><figcaption>Логотип и фирменный стиль</figcaption></figure>
+      <figure><img src="/assets/design/carousel-01-oblozhka.webp" alt="Обложка карусели" loading="lazy" decoding="async" width="900" height="1125"><figcaption>Карусель, обложка</figcaption></figure>
+      <figure><img src="/assets/design/carousel-06-vashe-menyu.webp" alt="Слайд карусели" loading="lazy" decoding="async" width="900" height="1125"><figcaption>Карусель, слайд</figcaption></figure>
+      <figure class="wide"><img src="/assets/design/avibra-banner.webp" alt="Баннер профиля" loading="lazy" decoding="async" width="1600" height="800"><figcaption>Баннер профиля для соцсетей</figcaption></figure>
     </div>
   </div>
 </section>
@@ -119,10 +124,10 @@
     <h2>Обсудим задачу?</h2>
     <p>Напишите пару фраз о том, что нужно. Отвечу, уточню детали и назову цену и срок до начала работы.</p>
     <div class="links">
-      <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
-      <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
-      <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
-      <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
+      <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
+      <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
+      <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
+      <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
     </div>
   </div>
 </section>
@@ -133,21 +138,21 @@
   </div>
 </footer>
 
-<button class="fab" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg#msg"/></svg>Написать</button>
+<button class="fab" type="button" data-write><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#msg"/></svg>Написать</button>
 <div class="sheet-bg"></div>
 <div class="sheet" role="dialog" aria-label="Как связаться">
   <div class="grab"></div>
   <h3>Где вам удобнее?</h3>
-  <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
-  <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
-  <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
-  <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
+  <a href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#tg"/></svg><b>Telegram</b><span>@theavibra</span></a>
+  <a href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#wa"/></svg><b>WhatsApp</b><span>+7 933 215-64-71</span></a>
+  <a href="https://www.instagram.com/theavibra/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#ig"/></svg><b>Instagram</b><span>@theavibra</span></a>
+  <a href="https://t.me/avibralog" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#ch"/></svg><b>Канал в Telegram</b><span>Работы и процесс</span></a>
 </div>
 
 <dialog class="lb" aria-label="Просмотр видео">
-  <button class="lb-x" type="button" aria-label="Закрыть"><svg aria-hidden="true"><use href="/v2/icons.svg#x"/></svg></button>
+  <button class="lb-x" type="button" aria-label="Закрыть"><svg aria-hidden="true"><use href="/v2/icons.svg?v=15#x"/></svg></button>
   <div class="lb-box"></div>
 </dialog>
-<script src="/v2/main.js?v=14" defer></script>
+<script src="/v2/main.js?v=15" defer></script>
 </body>
 </html>

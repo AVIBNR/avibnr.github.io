@@ -194,3 +194,30 @@ if (finePointer && !still) {
     b.addEventListener('pointerleave', () => { b.style.transform = ''; });
   });
 }
+
+// theme: the header button switches and remembers it for every page; until then the device setting rules
+const root = document.documentElement;
+const themeMeta = () => document.querySelectorAll('meta[name=theme-color]').forEach(m => m.setAttribute('content', root.dataset.theme === 'dark' ? '#0E1115' : '#F3F4F6'));
+document.querySelectorAll('.theme').forEach(b => b.addEventListener('click', () => {
+  root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  root.dataset.themeFixed = '1';
+  try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
+  themeMeta();
+}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (root.dataset.themeFixed) return;
+  root.dataset.theme = e.matches ? 'dark' : 'light';
+  themeMeta();
+});
+themeMeta();
+
+// the running strip stops while it is off screen, so it costs nothing there
+if ('IntersectionObserver' in window) {
+  const mio = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('off', !e.isIntersecting)));
+  document.querySelectorAll('.marquee').forEach(m => mio.observe(m));
+}
+
+// offline cache: a second visit takes styles, scripts, fonts and pictures from the device
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}

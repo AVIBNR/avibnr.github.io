@@ -19,9 +19,8 @@
   --shadow:0 1px 2px rgba(15,18,23,.04),0 12px 32px -16px rgba(15,18,23,.18);
   --shadow-lg:0 2px 4px rgba(15,18,23,.04),0 40px 80px -36px rgba(15,18,23,.45);
 }
-/* dark mode follows the device: the same layout, the page becomes the night and the objects stay a step lighter */
-@media (prefers-color-scheme:dark){
-  :root{
+/* dark theme: chosen in the header or taken from the device (data-theme is set before the first paint) */
+:root[data-theme=dark]{
     --bg:#0E1115;--surf:#161A20;--surf2:#1E232B;
     --fg:#EEF0F3;--fg2:#B4BAC3;--mute:#8A929E;
     --line:rgba(238,240,243,.08);--line2:rgba(238,240,243,.16);
@@ -29,11 +28,10 @@
     --brd:#C9AC88;
     --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
     --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 40px 80px -36px rgba(0,0,0,.85);
-  }
 }
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;scroll-padding-top:80px}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--fb);overflow-x:clip}
+body{margin:0;transition:background-color .35s,color .35s;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--fb);overflow-x:clip}
 img,video{display:block;max-width:100%;height:auto}
 a{color:inherit}
 h1,h2,h3{margin:0;font-family:var(--fd);font-weight:600;letter-spacing:-.02em;line-height:1.08}
@@ -74,6 +72,12 @@ svg{width:1em;height:1em;flex:none}
 .switch a .t{position:relative;z-index:1}
 .switch a[aria-current]{color:var(--fg)}
 .switch .pill{position:absolute;inset:0;border-radius:999px;background:var(--surf);box-shadow:0 1px 2px rgba(15,18,23,.08),0 4px 12px -4px rgba(15,18,23,.12)}
+.theme{position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--fg2);background:var(--surf2);transition:background .2s,color .2s}
+.theme svg{grid-area:1/1;width:19px;height:19px;transition:transform .5s var(--spring),opacity .3s}
+.theme svg:last-child,[data-theme=dark] .theme svg:first-child{opacity:0;transform:rotate(-90deg) scale(.5)}
+[data-theme=dark] .theme svg:last-child{opacity:1;transform:none}
+@media (hover:hover) and (pointer:fine){.theme:hover{color:var(--fg)}}
+.theme:active{transform:scale(.92)}
 .bar-cta{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--fg);color:var(--on);font-weight:700;font-size:15px;transition:transform .12s var(--e),background .2s}
 .bar-cta svg{width:18px;height:18px}
 .bar-cta:active,.btn:active{transform:scale(.96)}
@@ -83,6 +87,7 @@ svg{width:1em;height:1em;flex:none}
   .switch{margin:0 0 0 auto}
   .switch a{padding:7px 14px;font-size:14px}
   .bar-cta{display:none}
+  .theme{width:38px;height:38px}
 }
 
 /* ---------- buttons ---------- */
@@ -107,7 +112,7 @@ svg{width:1em;height:1em;flex:none}
 /* a faint grid of timeline ticks behind the hero, fading out to the sides */
 .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(70% 60% at 70% 40%,#000 0%,transparent 75%);-webkit-mask-image:radial-gradient(70% 60% at 70% 40%,#000 0%,transparent 75%);pointer-events:none}
 .hero-in{position:relative;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(32px,5vw,72px);align-items:center}
-.hero h1{font-size:clamp(38px,5.6vw,76px);font-weight:600;line-height:1.04;letter-spacing:-.035em;text-wrap:balance}
+.hero h1{font-size:clamp(36px,4.9vw,68px);hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word;font-weight:600;line-height:1.04;letter-spacing:-.035em;text-wrap:balance}
 .lede{margin-top:22px;max-width:34em;font-size:clamp(17px,1.5vw,19px);color:var(--fg2)}
 .hero .row{margin-top:28px}
 .facts{margin-top:26px;display:flex;flex-wrap:wrap;gap:8px}
@@ -196,6 +201,7 @@ svg{width:1em;height:1em;flex:none}
 /* ---------- running strip of what I do, between the hero and the sections ---------- */
 .marquee{position:relative;overflow:hidden;padding:18px 0;border-block:1px solid var(--line);background:var(--surf);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .marquee-track{display:flex;width:max-content;animation:marquee 38s linear infinite}
+.marquee.off .marquee-track{animation-play-state:paused}
 .marquee span{display:flex;align-items:center;gap:22px;padding-right:22px;font:600 clamp(18px,2vw,24px)/1 var(--fd);letter-spacing:-.02em;white-space:nowrap;color:var(--fg)}
 .marquee span::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--br);flex:none}
 .marquee span:nth-child(even){color:var(--mute)}
@@ -203,7 +209,7 @@ svg{width:1em;height:1em;flex:none}
 @media (hover:hover){.marquee:hover .marquee-track{animation-play-state:paused}}
 
 /* ---------- sections ---------- */
-.sec{padding:clamp(64px,9vw,120px) 0}
+.sec{padding:clamp(64px,9vw,120px) 0;content-visibility:auto;contain-intrinsic-size:auto 900px}
 .sec+.sec{border-top:1px solid var(--line)}
 .sec-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 32px;margin-bottom:clamp(28px,4vw,52px)}
 .sec-head h2{font-size:clamp(30px,4.4vw,56px)}
@@ -412,15 +418,13 @@ svg{width:1em;height:1em;flex:none}
   .marquee-track{animation:none}
 }
 
-/* dark mode: component tweaks placed last so they win over the base rules above */
-@media (prefers-color-scheme:dark){
-  .bar{background:rgba(14,17,21,.78)}
-  .bar.scrolled{background:rgba(14,17,21,.9)}
-  .btn-main,.bar-cta,.fab,.sheet a:first-of-type{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-  @media (hover:hover) and (pointer:fine){.btn-main:hover,.bar-cta:hover{background:#fff}}
-  .play{background:rgba(238,240,243,.95)}
-  .contact{background:#151A21}
-  .foot{background:#151A21}
-  .tier.pick{background:var(--night3);border-color:var(--br)}
-  .editor{box-shadow:0 0 0 1px var(--nline2),var(--shadow-lg)}
-}
+/* dark theme: component tweaks placed last so they win over the base rules above */
+[data-theme=dark] .bar{background:rgba(14,17,21,.78)}
+[data-theme=dark] .bar.scrolled{background:rgba(14,17,21,.9)}
+[data-theme=dark] .btn-main,[data-theme=dark] .bar-cta,[data-theme=dark] .fab,[data-theme=dark] .sheet a:first-of-type{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+@media (hover:hover) and (pointer:fine){[data-theme=dark] .btn-main:hover,[data-theme=dark] .bar-cta:hover{background:#fff}}
+[data-theme=dark] .play{background:rgba(238,240,243,.95)}
+[data-theme=dark] .contact{background:#151A21}
+[data-theme=dark] .foot{background:#151A21}
+[data-theme=dark] .tier.pick{background:var(--night3);border-color:var(--br)}
+[data-theme=dark] .editor{box-shadow:0 0 0 1px var(--nline2),var(--shadow-lg)}

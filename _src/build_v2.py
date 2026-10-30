@@ -4,8 +4,8 @@ import os
 SITE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 B = '/v2/'  # page links; static files always live in /v2/
 ROBOTS = ''
-V = '14'
-I = '/v2/icons.svg'
+V = '15'
+I = f'/v2/icons.svg?v={V}'
 A = '/assets'
 
 
@@ -46,7 +46,7 @@ def head(title, desc, page):
 <link rel="preload" href="/v2/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/v2/fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/v2/style.css?v={V}">
-<script>document.documentElement.classList.add('js')</script>
+<script>(function(d){{d.classList.add('js');var t;try{{t=localStorage.getItem('theme')}}catch(e){{}}d.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t)d.dataset.themeFixed='1'}})(document.documentElement)</script>
 </head>
 <body>
 <div class="progress" aria-hidden="true"></div>
@@ -65,6 +65,7 @@ def bar(cur):
       {a(B + 'montazh/', 'Монтаж', 'm')}
       {a(B + 'proekty/', 'Проекты', 'p')}
     </nav>
+    <button class="theme" type="button" aria-label="Сменить тему" title="Сменить тему">{ic('sun')}{ic('moon')}</button>
     <button class="bar-cta" type="button" data-write>{ic('msg')}<span>Написать</span></button>
   </div>
 </header>
@@ -165,13 +166,13 @@ def editor():
 
 FAN = [('zapis-home.webp', 'Онлайн-запись', 'страница автосервиса'),
        ('qayd-home.webp', 'Qayd', 'учёт для магазина в Telegram'),
-       ('zapis-book.webp', 'Онлайн-запись', 'выбор свободного времени'),
-       ('zapis-admin.webp', 'Онлайн-запись', 'записи у владельца')]
+       ('zakaz-menu.webp', 'Приём заказов', 'меню кафе по QR-коду'),
+       ('zakaz-status.webp', 'Приём заказов', 'статус заказа у гостя')]
 
 
 def fan():
     imgs = ''.join(
-        f'<figure style="--k:{i}"><img src="{A}/{f}" alt="{n}: {d}" width="778" height="1688" loading="lazy"></figure>' for i, (f, n, d) in enumerate(FAN))
+        f'<figure style="--k:{i}"><img src="{A}/{f}" alt="{n}: {d}" width="778" height="1688" loading="lazy" decoding="async"></figure>' for i, (f, n, d) in enumerate(FAN))
     return f'''<div class="fan" aria-label="Экраны моих проектов">
   <div class="fan-in">{imgs}</div>
   <p class="fan-cap"><b>{FAN[0][1]}</b><span>{FAN[0][2]}</span></p>
@@ -182,7 +183,7 @@ def fan():
 def work(kind, src, poster, title, note, length, extra=''):
     return f'''<figure class="work {kind}"{extra}>
   <button class="work-play" type="button" data-src="{src}" data-kind="{kind}" aria-label="Смотреть со звуком: {title}">
-    <img src="{poster}" alt="" loading="lazy">
+    <img src="{poster}" alt="" loading="lazy" decoding="async">
     <span class="dur">{length}</span>
     <span class="play">{ic('play')}</span>
   </button>
@@ -192,7 +193,7 @@ def work(kind, src, poster, title, note, length, extra=''):
 
 
 WORKS = [
-    ('tall', f'{A}/video/reel-cafe.mp4', f'{A}/video/reel-poster-v2.jpg', 'Reels с ведущим', 'Вырезка пауз, субтитры, анимация интерфейса', '0:40'),
+    ('tall', f'{A}/video/reel-cafe.mp4', f'{A}/video/reel-poster-916.jpg', 'Reels с ведущим', 'Вырезка пауз, субтитры, анимация интерфейса', '0:40'),
     ('tall', f'{A}/video/short-cafe.mp4', f'{A}/video/short-cover.jpg', 'Реклама без съёмки', 'Моушн, 3D-телефон, текст по ритму', '0:29'),
     ('wide', f'{A}/video/guide-demo.mp4', f'{A}/video/guide-poster.jpg', 'Видеоинструкция по сайту', 'Скриншоты, курсор, зумы, английская озвучка', '0:40'),
     ('wide', f'{A}/video/neon-loop.mp4', f'{A}/video/neon-poster.jpg', 'Задник для сцены', '3D в Blender, бесшовная петля для экрана', '0:16'),
@@ -367,6 +368,11 @@ PROJECTS = [
      '<p class="pprice">5 000 ₽ один раз<small>первая неделя бесплатно, без абонентской платы</small></p>',
      [('https://zapis-avibra.netlify.app', 'Открыть демо', True), (WA, 'Хочу такую', False)],
      ['zapis-home.webp', 'zapis-book.webp', 'zapis-admin.webp'], 'phones'),
+    ('Для кафе и ресторанов', 'Приём заказов онлайн',
+     'Гость открывает меню по ссылке или QR-коду, собирает заказ и выбирает доставку или самовывоз. Заказ сразу приходит заведению, а гость видит, на каком он этапе.',
+     ['Меню с фото, добавками и ценами', 'Доставка, самовывоз и оплата онлайн', 'Статус заказа у гостя в реальном времени', 'Панель заведения: принять заказ, указать время, отметить готовность'], '',
+     [('https://zakaz-r2g.pages.dev/sushi', 'Открыть демо', True), (WA, 'Хочу такое', False)],
+     ['zakaz-menu.webp', 'zakaz-item.webp', 'zakaz-status.webp'], 'phones'),
     ('Telegram Mini App', 'Qayd, учёт для магазина',
      'Товары, остатки, продажи, финансы и работа команды прямо в Telegram. Каждый день работает в настоящем магазине, есть версия для браузера.',
      ['Продажи и остатки в реальном времени', 'Роли для владельца и продавцов', 'Отчёты по выручке и расходам'], '', [],
@@ -391,7 +397,7 @@ def projects():
                 ext = EXT if u.startswith('http') else ''
                 b.append(f'<a class="btn{" btn-main" if main else ""}" href="{u}" {ext}>{label}</a>')
             btns = '<div class="row">' + ''.join(b) + '</div>'
-        pics = ''.join(f'<img src="{A}/{f}" alt="{name}" loading="lazy">' for f in imgs)
+        pics = ''.join(f'<img src="{A}/{f}" alt="{name}" loading="lazy" decoding="async">' for f in imgs)
         out.append(f'''<article class="proj">
   <div class="proj-text"><p class="tag">{tag}</p><h3>{name}</h3><p class="about">{about}</p>{li}{price}{btns}</div>
   <div class="proj-media {media}">{pics}</div>
@@ -458,10 +464,10 @@ def proekty():
   <div class="wrap">
     <div class="sec-head"><h2>Дизайн</h2><p>Логотипы, баннеры и карусели для соцсетей, в одном стиле и с расчётом на телефон.</p></div>
     <div class="gal">
-      <figure><img src="{A}/design/avibra-logo.webp" alt="Логотип Avibra" loading="lazy" width="900" height="900"><figcaption>Логотип и фирменный стиль</figcaption></figure>
-      <figure><img src="{A}/design/carousel-01-oblozhka.webp" alt="Обложка карусели" loading="lazy" width="900" height="1125"><figcaption>Карусель, обложка</figcaption></figure>
-      <figure><img src="{A}/design/carousel-06-vashe-menyu.webp" alt="Слайд карусели" loading="lazy" width="900" height="1125"><figcaption>Карусель, слайд</figcaption></figure>
-      <figure class="wide"><img src="{A}/design/avibra-banner.webp" alt="Баннер профиля" loading="lazy" width="1600" height="800"><figcaption>Баннер профиля для соцсетей</figcaption></figure>
+      <figure><img src="{A}/design/avibra-logo.webp" alt="Логотип Avibra" loading="lazy" decoding="async" width="900" height="900"><figcaption>Логотип и фирменный стиль</figcaption></figure>
+      <figure><img src="{A}/design/carousel-01-oblozhka.webp" alt="Обложка карусели" loading="lazy" decoding="async" width="900" height="1125"><figcaption>Карусель, обложка</figcaption></figure>
+      <figure><img src="{A}/design/carousel-06-vashe-menyu.webp" alt="Слайд карусели" loading="lazy" decoding="async" width="900" height="1125"><figcaption>Карусель, слайд</figcaption></figure>
+      <figure class="wide"><img src="{A}/design/avibra-banner.webp" alt="Баннер профиля" loading="lazy" decoding="async" width="1600" height="800"><figcaption>Баннер профиля для соцсетей</figcaption></figure>
     </div>
   </div>
 </section>
