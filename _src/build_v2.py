@@ -1,7 +1,9 @@
 """Avibra site, third pass: one dark 'editing room' system for all three pages."""
 import os
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'v2')
+SITE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+B = '/v2/'  # page links; static files always live in /v2/
+ROBOTS = ''
 V = '10'
 I = '/v2/icons.svg'
 A = '/assets'
@@ -34,7 +36,7 @@ def head(title, desc, page):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#151B22">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="noindex">
+{ROBOTS}
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <meta property="og:title" content="{title}">
@@ -58,10 +60,10 @@ def bar(cur):
         return f'<a href="{href}"><span class="t">{label}</span></a>'
     return f'''<header class="bar">
   <div class="bar-in">
-    <a class="logo" href="/v2/" aria-label="Avibra, на главную">{ic('mark')}<span>Avibra</span></a>
+    <a class="logo" href="{B}" aria-label="Avibra, на главную">{ic('mark')}<span>Avibra</span></a>
     <nav class="switch" aria-label="Направления">
-      {a('/v2/montazh/', 'Монтаж', 'm')}
-      {a('/v2/proekty/', 'Проекты', 'p')}
+      {a(B + 'montazh/', 'Монтаж', 'm')}
+      {a(B + 'proekty/', 'Проекты', 'p')}
     </nav>
     <button class="bar-cta" type="button" data-write>{ic('msg')}<span>Написать</span></button>
   </div>
@@ -222,11 +224,11 @@ def home():
       </div>
       <div class="pane-text" id="pane-m" role="tabpanel" aria-labelledby="tab-m">
         <p>Reels, Shorts и TikTok из сырого видео с телефона: без пауз, с субтитрами, зумами и звуком.</p>
-        <div class="row"><a class="btn btn-main" href="/v2/montazh/">Смотреть работы и цены</a><span class="from">от 1 000 ₽ за ролик</span></div>
+        <div class="row"><a class="btn btn-main" href="{B}montazh/">Смотреть работы и цены</a><span class="from">от 1 000 ₽ за ролик</span></div>
       </div>
       <div class="pane-text" id="pane-p" role="tabpanel" aria-labelledby="tab-p" hidden>
         <p>Сайты, веб-приложения, Telegram-боты и Mini Apps. Мои продукты работают у реальных людей, их можно открыть.</p>
-        <div class="row"><a class="btn btn-main" href="/v2/proekty/">Смотреть проекты и цены</a><span class="from">лендинг от 3 500 ₽</span></div>
+        <div class="row"><a class="btn btn-main" href="{B}proekty/">Смотреть проекты и цены</a><span class="from">лендинг от 3 500 ₽</span></div>
       </div>
     </div>
     <div class="stage" data-show="m">
@@ -238,7 +240,7 @@ def home():
 
 <section class="sec">
   <div class="wrap">
-    <div class="sec-head"><h2>Последние работы</h2><a class="more" href="/v2/montazh/#works">Все ролики</a></div>
+    <div class="sec-head"><h2>Последние работы</h2><a class="more" href="{B}montazh/#works">Все ролики</a></div>
     {works_grid([0, 2, 1])}
   </div>
 </section>
@@ -479,7 +481,10 @@ def proekty():
     return h
 
 
-for path, fn in [('index.html', home), ('montazh/index.html', montazh), ('proekty/index.html', proekty)]:
+# The same pages at the site root (the main address) and at /v2/ (links already sent to clients).
+for B, ROOT in [('/', SITE), ('/v2/', os.path.join(SITE, 'v2'))]:
+  ROBOTS = '' if B == '/' else '<link rel="canonical" href="https://avibnr.github.io/">'
+  for path, fn in [('index.html', home), ('montazh/index.html', montazh), ('proekty/index.html', proekty)]:
     full = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, 'w') as f:

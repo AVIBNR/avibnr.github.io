@@ -1,0 +1,1727 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title data-i18n="meta.title">Avibra — веб-приложения для бизнеса</title>
+<meta name="description" data-i18n-attr="content:meta.desc" content="Онлайн-запись для автосервиса за 5 000 ₽ с бесплатной неделей. Веб-приложения, Telegram Mini App и доработки под заказ.">
+<meta name="theme-color" content="#050506">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23050506%22/%3E%3Cpath d=%22M16 50 32 12 48 50M22 38h20%22 stroke=%22%23c8925f%22 stroke-width=%225%22 fill=%22none%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+Display:ital,wdth,wght@0,62.5..100,400;1,62.5..100,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="modulepreload" href="assets/vendor/three.module.min.js">
+<script type="importmap">
+{ "imports": {
+  "three": "./assets/vendor/three.module.min.js",
+  "three/addons/": "./assets/vendor/",
+  "gsap": "./assets/vendor/gsap-core.js"
+} }
+</script>
+<style>
+  :root {
+    --bg: #050506;
+    --ink: #f1ece4;
+    --ink-dim: rgba(241, 236, 228, .66);
+    --ink-mute: rgba(241, 236, 228, .42);
+    --ink-faint: rgba(241, 236, 228, .14);
+    --line: rgba(241, 236, 228, .08);
+    --accent: #c8925f;           /* follows the section palette */
+    --zapis: #2f6bff;            /* Zapis' own brand blue, used only in its section */
+    --serif: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --pad: clamp(20px, 4vw, 56px);
+    --top: 76px;
+    --ease: cubic-bezier(.2, .7, .1, 1);
+    --measure: 34rem;
+  }
+  html:lang(ru) { --serif: "Noto Serif Display", "Times New Roman", serif; }
+  *, *::before, *::after { box-sizing: border-box; }
+  html {
+    background: var(--bg); scroll-behavior: smooth; scroll-padding-top: var(--top);
+    -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-weight: 300; font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: clip;
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  a { color: inherit; text-decoration: none; }
+  a, button { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  :focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  img { display: block; max-width: 100%; }
+
+  /* ---------- WebGL stage (fixed behind everything) ---------- */
+  #gl { position: fixed; top: 0; left: 0; right: 0; width: 100%; height: 100vh; height: 100lvh; display: block; z-index: 0; opacity: 0; transition: opacity 1.8s var(--ease); }
+  .gl-ready #gl { opacity: 1; }
+  .fallback {
+    position: fixed; inset: 0; z-index: 0; display: none;
+    background: radial-gradient(60vw 60vh at 66% 40%, rgba(120, 72, 36, .28), transparent 70%), var(--bg);
+  }
+  .no-webgl .fallback { display: block; }
+  .no-webgl #gl { display: none; }
+
+  /* ---------- header ---------- */
+  .top {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--top); z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 var(--pad);
+    transition: background-color .5s var(--ease), border-color .5s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  .is-scrolled .top { background: rgba(5, 5, 6, .72); border-color: var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .brand { font-weight: 500; font-size: 13px; letter-spacing: .46em; margin-right: -.46em; }
+  .nav { display: flex; align-items: center; gap: 28px; font-size: 13px; color: var(--ink-mute); }
+  .nav a { padding: 6px 0; transition: color .4s var(--ease); }
+  .nav a.is-active { color: var(--ink); }
+  .top-actions { display: flex; align-items: center; gap: 18px; }
+  .lang { position: relative; }
+  .lang-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; font-size: 12px; letter-spacing: .14em; color: var(--ink-dim); }
+  .lang-btn svg { width: 9px; height: 6px; transition: transform .4s var(--ease); }
+  .lang-btn[aria-expanded="true"] { color: var(--ink); }
+  .lang-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .lang-menu {
+    position: absolute; top: calc(100% + 8px); right: -12px; z-index: 40; min-width: 150px; padding: 6px;
+    display: flex; flex-direction: column; border: 1px solid var(--ink-faint); border-radius: 14px;
+    background: rgba(10, 10, 12, .92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .lang-menu[hidden] { display: none; }
+  .lang-menu button { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 9px; text-align: left; font-size: 14px; color: var(--ink-dim); }
+  .lang-menu button b { font-weight: 400; font-size: 11px; letter-spacing: .14em; color: var(--ink-mute); width: 22px; }
+  .lang-menu button[aria-checked="true"] { color: var(--ink); }
+  .lang-menu button[aria-checked="true"] b { color: var(--accent); }
+  .top .cta { font-size: 13px; padding: 10px 18px; border: 1px solid var(--ink-faint); border-radius: 999px; transition: border-color .4s var(--ease); }
+  .menu-btn { display: none; font-size: 14px; padding: 10px 0; }
+  .mnav {
+    position: fixed; inset: 0; z-index: 30; padding: calc(var(--top) + 24px) var(--pad) 40px;
+    background: rgba(5, 5, 6, .96); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .mnav[hidden] { display: none; }
+  .mnav ul { list-style: none; margin: 0; padding: 0; }
+  .mnav li a { display: block; font-family: var(--serif); font-size: clamp(2.2rem, 10vw, 3.4rem); line-height: 1.2; }
+  .mnav .close { position: absolute; top: 0; right: var(--pad); height: var(--top); font-size: 14px; }
+  .mnav .mnav-contacts { display: grid; gap: 12px; }
+
+  /* ---------- shared type ---------- */
+  main { position: relative; z-index: 2; }
+  .h1, .h2 { margin: 0; font-family: var(--serif); font-weight: 400; letter-spacing: -.012em; text-wrap: balance; }
+  .h1 { font-size: clamp(3rem, min(6.2vw, 11vh), 7.2rem); line-height: .94; }
+  .h2 { font-size: clamp(2.4rem, 5.2vw, 4.8rem); line-height: 1; }
+  html:lang(ru) .h1, html:lang(ru) .h2 { font-stretch: 76%; letter-spacing: -.02em; }
+  .h1 .line, .h2 .line { display: block; }
+  .h1 em, .h2 em { font-style: italic; color: color-mix(in srgb, var(--accent) 62%, var(--ink)); }
+  .lead { margin: 28px 0 0; max-width: var(--measure); font-size: clamp(17px, 1.35vw, 19px); color: var(--ink-dim); }
+  .note { margin: 18px 0 0; font-size: 14px; color: var(--ink-mute); }
+  .kicker { margin: 0 0 22px; font-size: 14px; color: var(--accent); }
+
+  /* letters of the big titles rise in once (hero on load, contact when reached) */
+  .word { display: inline-block; white-space: nowrap; }
+  .char { display: inline-block; opacity: 0; filter: blur(12px); transform: translate3d(0, .3em, 0); }
+  .is-in .char {
+    opacity: 1; filter: blur(0); transform: none;
+    transition: opacity 1s var(--ease), filter 1.2s var(--ease), transform 1.2s var(--ease);
+    transition-delay: calc(var(--i) * 28ms + 120ms); will-change: transform, opacity, filter;
+  }
+  @media (pointer: coarse) { .char { filter: none; } }
+
+  /* ---------- buttons ---------- */
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px;
+    font-size: 15px; font-weight: 400; border: 1px solid var(--ink-faint); color: var(--ink);
+    transition: background-color .4s var(--ease), border-color .4s var(--ease), color .4s var(--ease), opacity .2s;
+  }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn-main { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn-zapis { background: var(--zapis); border-color: var(--zapis); color: #fff; }
+  .btn:active { opacity: .75; }
+  .text-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; color: var(--ink-dim); border-bottom: 1px solid var(--ink-faint); }
+
+  /* ---------- hero & contact: full screens over the 3D monogram ---------- */
+  .stage {
+    min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: calc(var(--top) + 40px) var(--pad) clamp(48px, 10vh, 112px);
+  }
+  .stage-copy { max-width: 46rem; }
+
+  /* ---------- showcases: the section pins while its device stands in frame ---------- */
+  .showcase { position: relative; height: 210svh; }
+  .pin {
+    position: sticky; top: 0; height: 100svh;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 4vw, 72px);
+    padding: calc(var(--top) + 24px) var(--pad) 40px;
+  }
+  .device-box { position: relative; height: min(76svh, 760px); }
+  .device-box.wide { height: min(62svh, 560px); }
+  .device-box .shot { display: none; }
+  .no-webgl .device-box .shot { display: block; height: 100%; width: auto; margin: 0 auto; border-radius: 28px; object-fit: contain; }
+  .price { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+  .price b { font-family: var(--serif); font-weight: 400; font-size: clamp(2.6rem, 4vw, 3.6rem); line-height: 1; }
+  .price span { color: var(--ink-dim); }
+  .tag { display: inline-block; margin-top: 12px; padding: 6px 12px; border-radius: 999px; font-size: 14px; background: rgba(47, 107, 255, .16); color: #b9ccff; }
+
+  /* ---------- regular sections ---------- */
+  .section { padding: clamp(96px, 16vh, 168px) var(--pad); background: rgba(5, 5, 6, .84); }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+  .head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px 64px; align-items: end; }
+  .head .lead { margin: 0; }
+
+  .screens { display: grid; grid-template-columns: repeat(3, minmax(0, 280px)); justify-content: space-between; gap: clamp(16px, 3vw, 40px); margin: 72px 0 0; padding: 0; list-style: none; }
+  .screens figure { margin: 0; }
+  .phone-frame { padding: 6px; border-radius: 34px; background: linear-gradient(150deg, #6b1f30, #2a0b14 45%, #5a1828); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9); }
+  .phone-frame img { width: 100%; height: auto; border-radius: 28px; }
+  .screens figcaption { margin-top: 18px; color: var(--ink-dim); max-width: 22rem; }
+  .screens figcaption b { display: block; font-weight: 400; color: var(--ink); }
+
+  .features { margin: 72px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; }
+  .features li { padding: 18px 0; border-top: 1px solid var(--line); color: var(--ink-dim); }
+
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 40px; }
+  .steps li { counter-increment: s; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-dim); }
+  .steps li::before { content: counter(s); display: block; margin-bottom: 14px; font-family: var(--serif); font-size: 2.4rem; line-height: 1; color: var(--accent); }
+  .steps b { display: block; font-weight: 400; color: var(--ink); margin-bottom: 6px; }
+  .sub-title { margin: 96px 0 32px; font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 3vw, 2.6rem); line-height: 1.1; }
+
+  .prices { margin: 64px 0 0; padding: 0; list-style: none; }
+  .prices li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 40px; align-items: baseline; padding: 28px 0; border-top: 1px solid var(--line); }
+  .prices li:last-child { border-bottom: 1px solid var(--line); }
+  .prices h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(1.5rem, 2.4vw, 2.1rem); line-height: 1.15; }
+  .prices p { margin: 6px 0 0; color: var(--ink-dim); max-width: 38rem; }
+  .prices .cost { font-size: clamp(18px, 1.6vw, 21px); white-space: nowrap; text-align: right; }
+
+  .contacts { display: grid; gap: 12px; margin-top: 34px; }
+  .contacts .btn { width: fit-content; }
+  .foot { position: relative; z-index: 2; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px var(--pad); border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-mute); background: var(--bg); }
+
+  /* ---------- cursor (mouse only) ---------- */
+  .cursor-ring, .cursor-dot { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; border-radius: 50%; opacity: 0; will-change: transform; }
+  .cursor-ring { width: 38px; height: 38px; margin: -19px 0 0 -19px; border: 1px solid rgba(241, 236, 228, .42); transition: opacity .4s, border-color .4s, transform 0s; }
+  .cursor-dot { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; background: var(--ink); }
+  .has-cursor .cursor-ring, .has-cursor .cursor-dot { opacity: 1; }
+  .has-cursor.cursor-out .cursor-ring, .has-cursor.cursor-out .cursor-dot { opacity: 0; }
+  .has-cursor .cursor-ring.is-hover { border-color: var(--accent); }
+  .has-cursor, .has-cursor a, .has-cursor button { cursor: none; }
+
+  /* hover only where a precise pointer can hover */
+  @media (hover: hover) and (pointer: fine) {
+    .nav a:hover, .lang-btn:hover { color: var(--ink); }
+    .top .cta:hover { border-color: var(--accent); }
+    .btn:hover { border-color: var(--accent); }
+    .btn-main:hover { background: transparent; color: var(--ink); }
+    .btn-zapis:hover { background: #4a80ff; }
+    .text-link:hover { color: var(--ink); border-color: var(--accent); }
+    .lang-menu button:hover { background: rgba(241, 236, 228, .06); color: var(--ink); }
+  }
+
+
+  /* ---------- directions, galleries, video ---------- */
+  .dirs { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .dir { position: relative; display: flex; flex-direction: column; height: 100%; padding: 28px 28px 24px; border: 1px solid var(--line); border-radius: 22px; background: rgba(241, 236, 228, .025); transition: border-color .5s var(--ease), background-color .5s var(--ease), transform .6s var(--ease); }
+  .dir-n { font-family: var(--serif); font-size: 1.1rem; color: var(--accent); }
+  .dir h3 { margin: 44px 0 0; font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 2.4vw, 2.2rem); line-height: 1.08; }
+  .dir p { margin: 12px 0 28px; color: var(--ink-dim); }
+  .dir-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .dir-p { color: var(--ink); }
+  .dir-go { color: var(--ink-dim); transition: color .4s, transform .5s var(--ease); }
+  .kicker { margin: 0 0 18px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .part .head { margin-top: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 48px 0 0; padding: 0; list-style: none; }
+  .chips li { padding: 10px 18px; border: 1px solid var(--ink-faint); border-radius: 999px; color: var(--ink-dim); font-size: 15px; }
+  .gallery, .videos { margin: 64px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: clamp(14px, 2vw, 24px); }
+  .gallery figure, .videos figure { margin: 0; }
+  .g-sq { grid-column: span 4; } .g-wide { grid-column: span 8; } .g-tall { grid-column: span 4; }
+  .g-img, .v-box { overflow: hidden; border-radius: 20px; border: 1px solid var(--line); background: #0d0d10; }
+  .g-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
+  .g-sq .g-img, .g-wide .g-img { aspect-ratio: auto; height: clamp(220px, 30vw, 420px); }
+  .g-tall .g-img { aspect-ratio: 4 / 5; }
+  .gallery figcaption, .videos figcaption { margin-top: 14px; color: var(--ink-dim); font-size: 15px; }
+  .gallery figcaption b, .videos figcaption b { display: block; font-weight: 400; color: var(--ink); }
+  .v-tall { grid-column: span 5; } .v-tall + .v-tall { grid-column: 7 / span 5; }
+  .v-box video { display: block; width: 100%; height: auto; background: #000; }
+  .v-play { position: relative; display: block; width: 100%; padding: 0; }
+  /* cover cropped like the Instagram grid (3:4, centre); the full 9:16 video opens on tap */
+  .v-play img { width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: 50% 24%; }
+  .v-icon { position: absolute; right: 18px; top: 18px; width: 56px; height: 56px; border-radius: 50%; background: rgba(5, 5, 6, .55); border: 1px solid rgba(241, 236, 228, .35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: transform .5s var(--ease), background-color .4s; }
+  .v-icon::after { content: ""; position: absolute; left: 22px; top: 17px; border-style: solid; border-width: 11px 0 11px 17px; border-color: transparent transparent transparent var(--ink); }
+  @media (hover: hover) and (pointer: fine) { .v-play:hover .v-icon { transform: scale(1.08); background: rgba(5, 5, 6, .75); } }
+  .prices + .sub-title, .head + .sub-title { margin-top: 72px; }
+  @media (hover: hover) and (pointer: fine) {
+    .dir:hover { border-color: var(--ink-faint); background: rgba(241, 236, 228, .05); transform: translateY(-4px); }
+    .dir:hover .dir-go { color: var(--ink); transform: translateX(4px); }
+    .g-img:hover img { transform: scale(1.035); }
+  }
+  @media (max-width: 900px) {
+    .dirs { grid-template-columns: 1fr; }
+    .dir h3 { margin-top: 24px; }
+    .g-sq, .g-wide { grid-column: span 12; }
+    .v-tall, .v-tall + .v-tall { grid-column: span 6; }
+    .g-tall { grid-column: span 6; }
+  }
+  @media (max-width: 560px) {
+    .g-tall, .v-tall, .v-tall + .v-tall { grid-column: span 12; }
+  }
+
+  [data-channel][hidden] { display: none !important; }
+
+  /* ---------- tablets and phones ---------- */
+  @media (max-width: 900px) {
+    .nav, .top .cta { display: none; }
+    .menu-btn { display: block; }
+    .head { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; gap: 28px; }
+  }
+  @media (max-width: 760px) {
+    :root { --top: 64px; }
+    .stage { padding-bottom: 56px; }
+    .h1 { font-size: clamp(2.7rem, 12.4vw, 4.4rem); }
+    .h2 { font-size: clamp(2.2rem, 10.4vw, 3.4rem); }
+    .lead { margin-top: 20px; }
+    .actions { margin-top: 26px; }
+    .actions .btn { flex: 1 1 100%; justify-content: center; }
+    .contacts .btn { width: 100%; justify-content: center; }
+    /* showcase on a phone: device on top, copy underneath */
+    .pin { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 18px; padding: calc(var(--top) + 12px) var(--pad) 24px; }
+    .device-box, .device-box.wide { order: -1; height: 100%; min-height: 0; }
+    .pin .kicker { display: none; }
+    .pin .tag { margin-top: 10px; }
+    .pin .lead { font-size: 16px; margin-top: 12px; }
+    .pin .price { margin-top: 16px; }
+    .pin .price b { font-size: 2.4rem; }
+    .pin .actions { margin-top: 18px; }
+    .pin .actions .btn { flex: 1 1 0; min-height: 48px; padding: 0 14px; }
+    .screens { grid-template-columns: repeat(3, 72%); overflow-x: auto; scroll-snap-type: x mandatory; margin-left: calc(-1 * var(--pad)); margin-right: calc(-1 * var(--pad)); padding: 0 var(--pad); scrollbar-width: none; }
+    .screens li { scroll-snap-align: center; }
+    .prices li { grid-template-columns: 1fr; }
+    .prices .cost { text-align: left; color: var(--accent); }
+  }
+  @media (max-width: 760px) and (max-height: 720px) {
+    .pin .h2 { font-size: 2rem; }
+    .pin .lead { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .char, .is-in .char { filter: none; transform: none; transition-duration: .4s; transition-delay: 0s; }
+    #gl { transition: none; }
+  }
+
+  .radar-promo { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(20px, 4vw, 48px); align-items: center; text-decoration: none; color: inherit;
+    border: 1px solid var(--line); border-radius: 24px; padding: clamp(14px, 2vw, 22px); transition: border-color .2s; }
+  .radar-promo:hover { border-color: rgba(200, 146, 95, .5); }
+  .radar-promo img { width: 100%; height: auto; aspect-ratio: 2/1; border-radius: 16px; display: block; }
+  .radar-copy { display: flex; flex-direction: column; gap: 12px; }
+  .radar-copy .h2 { display: block; }
+  @media (max-width: 820px) { .radar-promo { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="cursor-out">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-tg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.4 3.6 2.9 10.7c-.9.4-.9 1.6.1 1.9l4.6 1.5 1.8 5.5c.2.7 1.1.9 1.6.4l2.6-2.4 4.8 3.5c.6.4 1.4.1 1.6-.6L23 5c.2-.9-.7-1.7-1.6-1.4ZM9.8 14.6l-.4 3.3-1.2-3.9 9.6-6.3-8 6.9Z"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 2.8a9.2 9.2 0 0 0-7.9 13.9L2.8 21.2l4.6-1.2A9.2 9.2 0 1 0 12 2.8Z"/><path fill="currentColor" d="M8.7 7.4c.2-.4.5-.4.8-.4h.6c.2 0 .4.1.5.4l.8 1.8c.1.3 0 .5-.1.7l-.5.6c-.1.2-.1.4 0 .6.7 1.1 1.6 2 2.8 2.7.2.1.4.1.6 0l.7-.8c.2-.2.4-.3.7-.2l1.8.9c.3.1.4.3.4.6v.5c0 .4-.2.8-.6 1-.6.3-1.4.6-2.5.3-2.1-.6-4.8-3.2-5.4-5.4-.3-1 0-1.9.4-2.4Z"/></symbol>
+</svg>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="fallback" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="brand" href="#top" aria-label="Avibra, наверх" data-i18n-attr="aria-label:a.brand">AVIBRA</a>
+  <nav class="nav" aria-label="Разделы" data-i18n-attr="aria-label:a.sections">
+    <a href="#dev" data-nav="dev" data-i18n="nav.dev">Разработка</a>
+    <a href="#design" data-nav="design" data-i18n="nav.design">Дизайн</a>
+    <a href="#video" data-nav="video" data-i18n="nav.video">Видео</a>
+    <a href="#services" data-nav="services" data-i18n="nav.prices">Цены</a>
+    <a href="#contact" data-nav="contact" data-i18n="nav.contact">Контакты</a>
+  </nav>
+  <div class="top-actions">
+    <div class="lang">
+      <button class="lang-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Язык: русский" data-i18n-attr="aria-label:a.lang"><span class="lang-cur">RU</span><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <div class="lang-menu" role="menu" hidden>
+        <button type="button" role="menuitemradio" data-lang="ru" aria-checked="false"><b>RU</b>Русский</button>
+        <button type="button" role="menuitemradio" data-lang="en" aria-checked="false"><b>EN</b>English</button>
+      </div>
+    </div>
+    <a class="cta" href="#contact" data-i18n="cta">Написать</a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mnav" data-i18n="menu">Меню</button>
+  </div>
+</header>
+
+<div class="mnav" id="mnav" hidden>
+  <button class="close" type="button" data-i18n="close">Закрыть</button>
+  <ul>
+    <li><a href="#dev" data-i18n="nav.dev">Разработка</a></li>
+    <li><a href="#design" data-i18n="nav.design">Дизайн</a></li>
+    <li><a href="#video" data-i18n="nav.video">Видео</a></li>
+    <li><a href="#services" data-i18n="nav.prices">Цены</a></li>
+    <li><a href="#contact" data-i18n="nav.contact">Контакты</a></li>
+  </ul>
+  <div class="mnav-contacts">
+    <a class="btn btn-main" data-tg href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-tg"/></svg><span data-i18n="btn.tg">Написать в Telegram</span></a>
+    <a class="btn" data-wa="wa.general" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span data-i18n="btn.wa">Написать в WhatsApp</span></a>
+  </div>
+</div>
+
+<main>
+  <!-- intro over the 3D monogram -->
+  <section class="stage" id="top" data-theme="0" data-away="0" aria-labelledby="t-hero">
+    <div class="stage-copy">
+      <h1 class="h1" id="t-hero" data-split data-title="hero"><span class="line">Сайты, дизайн и видео</span><span class="line"><em>для вашего бизнеса.</em></span></h1>
+      <p class="lead" data-i18n="hero.lead">Разрабатываю сайты, веб-приложения и Telegram-ботов, делаю графический дизайн и монтирую ролики. Цену и срок называю до начала работы.</p>
+      <div class="actions">
+        <a class="btn btn-main" data-tg href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-tg"/></svg><span data-i18n="btn.tg">Написать в Telegram</span></a>
+        <a class="btn" data-wa="wa.general" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span data-i18n="btn.wa">Написать в WhatsApp</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="dirs" data-theme="1" data-away="1" aria-labelledby="t-dirs">
+    <div class="wrap">
+      <div class="head">
+        <h2 class="h2" id="t-dirs" data-i18n="dirs.title">Чем могу помочь</h2>
+        <p class="lead" data-i18n="dirs.lead">Три направления — откройте нужное. Каждую ссылку можно отправить отдельно.</p>
+      </div>
+      <ul class="dirs">
+        <li><a class="dir" href="#dev"><span class="dir-n">01</span><h3 data-i18n="dirs.1.t">Разработка</h3><p data-i18n="dirs.1.d">Сайты и лендинги, веб-приложения, Telegram Mini Apps и боты, программы для ПК.</p><span class="dir-foot"><span class="dir-p" data-i18n="dirs.1.p">от 2 000 ₽</span><span class="dir-go"><span data-i18n="dirs.open">Смотреть</span> →</span></span></a></li>
+        <li><a class="dir" href="#design"><span class="dir-n">02</span><h3 data-i18n="dirs.2.t">Графический дизайн</h3><p data-i18n="dirs.2.d">Логотипы и айдентика, баннеры, афиши, карусели для соцсетей, полиграфия.</p><span class="dir-foot"><span class="dir-p" data-i18n="dirs.2.p">от 1 000 ₽</span><span class="dir-go"><span data-i18n="dirs.open">Смотреть</span> →</span></span></a></li>
+        <li><a class="dir" href="#video"><span class="dir-n">03</span><h3 data-i18n="dirs.3.t">Видео и моушн-дизайн</h3><p data-i18n="dirs.3.d">Reels и монтаж, анимация текста, графика и инфографика, динамичные ролики.</p><span class="dir-foot"><span class="dir-p" data-i18n="dirs.3.p">от 1 500 ₽</span><span class="dir-go"><span data-i18n="dirs.open">Смотреть</span> →</span></span></a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section part" id="dev" data-theme="2" data-away="1" aria-labelledby="t-dev">
+    <div class="wrap">
+      <p class="kicker" data-i18n="dev.kicker">Направление 01</p>
+      <div class="head">
+        <h2 class="h2" id="t-dev" data-i18n="dev.title">Разработка</h2>
+        <p class="lead" data-i18n="dev.lead">Сайты, веб-приложения и Telegram Mini Apps под ключ: от макета до запуска. Ниже — мои проекты, они работают на самом деле.</p>
+      </div>
+      <ul class="chips"><li data-i18n="dev.c1">Сайты и лендинги</li><li data-i18n="dev.c2">Веб-приложения</li><li data-i18n="dev.c3">Telegram Mini Apps</li><li data-i18n="dev.c4">Telegram-боты</li><li data-i18n="dev.c5">Программы для ПК</li><li data-i18n="dev.c6">Доработки и исправления</li></ul>
+    </div>
+  </section>
+
+  <!-- Zapis: the flagship offer -->
+  <section class="showcase" id="zapis" data-theme="2" data-away="1" data-device="phone" data-screen="zapis" aria-labelledby="t-zapis">
+    <div class="pin">
+      <div class="copy">
+        <p class="kicker" data-i18n="zapis.kicker">Готовое решение для автосервисов</p>
+        <h2 class="h2" id="t-zapis" data-i18n="zapis.title">Онлайн-запись для вашего автосервиса</h2>
+        <p class="lead" data-i18n="zapis.lead">Клиент открывает ссылку, выбирает услугу и время и записывается сам, без звонка. Все записи — у вас в телефоне.</p>
+        <div class="price"><b>5 000 ₽</b><span data-i18n="zapis.once">один раз, без абонентской платы</span></div>
+        <span class="tag" data-i18n="zapis.trial">Первая неделя бесплатно</span>
+        <div class="actions">
+          <a class="btn btn-zapis" data-wa="wa.zapis" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span data-i18n="zapis.want">Хочу демо</span></a>
+          <a class="btn" href="https://zapis-avibra.netlify.app/s/protector" target="_blank" rel="noopener" data-i18n="zapis.example">Открыть пример</a>
+        </div>
+      </div>
+      <div class="device-box" data-box="zapis"><img class="shot" src="assets/zapis-home.webp" alt="Страница записи автосервиса «Протектор», демо" data-i18n-attr="alt:a.zapisAlt" width="778" height="1688" loading="lazy" decoding="async"></div>
+    </div>
+  </section>
+
+  <section class="section" id="zapis-more" data-theme="2" data-away="1" aria-labelledby="t-zapis-more">
+    <div class="wrap">
+      <div class="head">
+        <h2 class="h2" id="t-zapis-more" data-i18n="more.title">Что получит ваш сервис</h2>
+        <p class="lead" data-i18n="more.lead">Всё настраиваю сам: услуги, цены, время работы, фото и контакты. Вам остаётся принимать клиентов.</p>
+      </div>
+      <ul class="screens">
+        <li><figure><div class="phone-frame"><img src="assets/zapis-home.webp" alt="Страница сервиса с кнопками и услугами, демо" data-i18n-attr="alt:a.s1" width="778" height="1688" loading="lazy" decoding="async"></div><figcaption><b data-i18n="more.s1.t">Своя страница</b><span data-i18n="more.s1.d">Логотип, фото, адрес, услуги и цены, кнопки «Позвонить», «Маршрут» и WhatsApp.</span></figcaption></figure></li>
+        <li><figure><div class="phone-frame"><img src="assets/zapis-book.webp" alt="Выбор даты и времени записи, демо" data-i18n-attr="alt:a.s2" width="778" height="1688" loading="lazy" decoding="async"></div><figcaption><b data-i18n="more.s2.t">Запись за минуту</b><span data-i18n="more.s2.d">Клиент выбирает услуги, день и свободное время — занятое время не показывается.</span></figcaption></figure></li>
+        <li><figure><div class="phone-frame"><img src="assets/zapis-admin.webp" alt="Экран «Сегодня» с записями и ожидаемой выручкой, демо" data-i18n-attr="alt:a.s3" width="778" height="1688" loading="lazy" decoding="async"></div><figcaption><b data-i18n="more.s3.t">Записи у вас в телефоне</b><span data-i18n="more.s3.d">Кто приедет сегодня, календарь, ожидаемая выручка и статистика.</span></figcaption></figure></li>
+      </ul>
+      <ul class="features">
+        <li data-i18n="more.f1">Уведомление на телефон о каждой новой записи</li>
+        <li data-i18n="more.f2">QR-код для визиток, стойки и ворот</li>
+        <li data-i18n="more.f3">Светлая и тёмная тема, ваши цвета и логотип</li>
+        <li data-i18n="more.f4">Работает в браузере — клиентам ничего не нужно скачивать</li>
+      </ul>
+      <h3 class="sub-title" data-i18n="more.how">Как подключить</h3>
+      <ol class="steps">
+        <li><b data-i18n="more.h1.t">Напишите мне</b><span data-i18n="more.h1.d">Соберу демо с названием и услугами именно вашего сервиса.</span></li>
+        <li><b data-i18n="more.h2.t">Неделя бесплатно</b><span data-i18n="more.h2.d">Принимаете записи и смотрите, удобно ли вам и клиентам.</span></li>
+        <li><b data-i18n="more.h3.t">Понравилось — 5 000 ₽</b><span data-i18n="more.h3.d">Оплата один раз. Не понравилось — просто отказываетесь, ничего не должны.</span></li>
+      </ol>
+      <div class="actions">
+        <a class="btn btn-zapis" data-wa="wa.zapis" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span data-i18n="zapis.want">Хочу демо</span></a>
+        <a class="btn" data-tg href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-tg"/></svg><span data-i18n="btn.tgShort">Telegram</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- works -->
+  <section class="showcase" id="qayd" data-theme="1" data-away="1" data-device="phone" data-screen="qayd" aria-labelledby="t-qayd">
+    <div class="pin">
+      <div class="copy">
+        <p class="kicker" data-i18n="qayd.kicker">Мой продукт</p>
+        <h2 class="h2" id="t-qayd" data-i18n="qayd.title">Qayd — учёт для магазина</h2>
+        <p class="lead" data-i18n="qayd.lead">Telegram Mini App: товары, остатки, продажи, финансы, работа команды и витрина. Каждый день работает в реальном магазине.</p>
+        <p class="note" data-i18n="qayd.note">Реальное приложение, на экране демо-данные.</p>
+      </div>
+      <div class="device-box" data-box="qayd"><img class="shot" src="assets/qayd-home.webp" alt="Главный экран Qayd, демо-данные" data-i18n-attr="alt:a.qaydAlt" width="780" height="1688" loading="lazy" decoding="async"></div>
+    </div>
+  </section>
+
+  <section class="showcase" id="wasl" data-theme="2" data-away="1" data-device="mac" aria-labelledby="t-wasl">
+    <div class="pin">
+      <div class="copy">
+        <p class="kicker" data-i18n="wasl.kicker">Мой продукт</p>
+        <h2 class="h2" id="t-wasl" data-i18n="wasl.title">Wasl — два компьютера как один</h2>
+        <p class="lead" data-i18n="wasl.lead">Одна мышь и клавиатура для Mac и Windows, общий буфер обмена, файлы и звук по локальной сети.</p>
+        <div class="actions"><a class="text-link" href="https://github.com/AVIBNR/wasl-releases/releases" target="_blank" rel="noopener" data-i18n="wasl.dl">Скачать Wasl</a></div>
+      </div>
+      <div class="device-box wide" data-box="wasl"><img class="shot" src="assets/wasl-home.webp" alt="Главный экран приложения Wasl" data-i18n-attr="alt:a.waslAlt" width="2200" height="1400" loading="lazy" decoding="async"></div>
+    </div>
+  </section>
+
+  <section class="section part" id="design" data-theme="3" data-away="1" aria-labelledby="t-design">
+    <div class="wrap">
+      <p class="kicker" data-i18n="design.kicker">Направление 02</p>
+      <div class="head">
+        <h2 class="h2" id="t-design" data-i18n="design.title">Графический дизайн</h2>
+        <p class="lead" data-i18n="design.lead">Логотипы, айдентика, баннеры и карусели — в едином стиле бренда и с расчётом на телефон.</p>
+      </div>
+      <ul class="gallery">
+        <li class="g-sq"><figure><div class="g-img"><img src="assets/design/avibra-logo.webp" alt="Логотип Avibra: знак и айдентика студии" width="900" height="900" loading="lazy" decoding="async"></div><figcaption><b data-i18n="design.g1">Логотип Avibra</b><span data-i18n="design.g1d">Знак и айдентика студии</span></figcaption></figure></li>
+        <li class="g-wide"><figure><div class="g-img"><img src="assets/design/avibra-banner.webp" alt="Баннер профиля: обложка для мессенджеров и соцсетей" width="1600" height="800" loading="lazy" decoding="async"></div><figcaption><b data-i18n="design.g2">Баннер профиля</b><span data-i18n="design.g2d">Обложка для мессенджеров и соцсетей</span></figcaption></figure></li>
+        <li class="g-tall"><figure><div class="g-img"><img src="assets/design/carousel-01-oblozhka.webp" alt="Карусель для Instagram: обложка серии из 7 слайдов" width="900" height="1125" loading="lazy" decoding="async"></div><figcaption><b data-i18n="design.g3">Карусель для Instagram</b><span data-i18n="design.g3d">Обложка серии из 7 слайдов</span></figcaption></figure></li>
+        <li class="g-tall"><figure><div class="g-img"><img src="assets/design/carousel-04-gotovyi-zakaz.webp" alt="Карусель для Instagram: слайд: заказ на кухне" width="900" height="1125" loading="lazy" decoding="async"></div><figcaption><b data-i18n="design.g4">Карусель для Instagram</b><span data-i18n="design.g4d">Слайд: заказ на кухне</span></figcaption></figure></li>
+        <li class="g-tall"><figure><div class="g-img"><img src="assets/design/carousel-06-vashe-menyu.webp" alt="Карусель для Instagram: слайд: ваше меню" width="900" height="1125" loading="lazy" decoding="async"></div><figcaption><b data-i18n="design.g5">Карусель для Instagram</b><span data-i18n="design.g5d">Слайд: ваше меню</span></figcaption></figure></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section part" id="video" data-theme="1" data-away="1" aria-labelledby="t-video">
+    <div class="wrap">
+      <p class="kicker" data-i18n="video.kicker">Направление 03</p>
+      <div class="head">
+        <h2 class="h2" id="t-video" data-i18n="video.title">Видео и моушн-дизайн</h2>
+        <p class="lead" data-i18n="video.lead">Монтаж Reels и рекламных роликов: субтитры, анимация текста, 3D-телефоны, инфографика и звуковые эффекты.</p>
+      </div>
+      <ul class="videos">
+        <li class="v-tall"><figure><div class="v-box"><button class="v-play" type="button" data-video="assets/video/reel-cafe.mp4" aria-label="Смотреть видео"><img src="assets/video/reel-poster-v2.jpg" alt="" width="720" height="960" loading="lazy" decoding="async"><span class="v-icon" aria-hidden="true"></span></button></div><figcaption><b data-i18n="video.v1">Reels с ведущим</b><span data-i18n="video.v1d">Съёмка, монтаж, субтитры и анимация интерфейса · 40 с</span></figcaption></figure></li>
+        <li class="v-tall"><figure><div class="v-box"><button class="v-play" type="button" data-video="assets/video/short-cafe.mp4" aria-label="Смотреть видео"><img src="assets/video/short-cover.jpg" alt="" width="720" height="1280" loading="lazy" decoding="async"><span class="v-icon" aria-hidden="true"></span></button></div><figcaption><b data-i18n="video.v2">Рекламный Reels</b><span data-i18n="video.v2d">Моушн-дизайн без съёмки: интерфейс, 3D-телефон, субтитры · 29 с</span></figcaption></figure></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- own product: Avibra Radar -->
+  <section class="section part" id="radar" data-theme="2" data-away="1" aria-labelledby="t-radar">
+    <div class="wrap">
+      <a class="radar-promo" href="radar/">
+        <img src="assets/radar-og.jpg" alt="Avibra Radar: бот с заказами для фрилансеров" data-i18n-attr="alt:radar.alt" width="1280" height="640" loading="lazy" decoding="async">
+        <span class="radar-copy">
+          <span class="kicker" data-i18n="radar.kicker">Мой продукт</span>
+          <b class="h2" id="t-radar" data-i18n="radar.title">Avibra Radar</b>
+          <span class="lead" data-i18n="radar.lead">Telegram-бот, который находит заказы для фрилансеров на биржах и в чатах и присылает их сразу после публикации.</span>
+          <span class="text-link" data-i18n="radar.more">Подробнее о боте</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <!-- custom work -->
+  <section class="section" id="services" data-theme="1" data-away="1" aria-labelledby="t-services">
+    <div class="wrap">
+      <div class="head">
+        <h2 class="h2" id="t-services" data-i18n="svc.title">Цены</h2>
+        <p class="lead" data-i18n="svc.lead">Цены стартовые. Точную назову после короткого разговора — и она не изменится по ходу работы.</p>
+      </div>
+      <h3 class="sub-title" data-i18n="svc.dev">Разработка</h3>
+      <ul class="prices">
+        <li><div><h3 data-i18n="svc.1.t">Исправлю ошибку или доработаю сайт</h3><p data-i18n="svc.1.d">Найду причину, исправлю и проверю на телефоне и компьютере.</p></div><span class="cost" data-i18n="svc.1.p">от 2 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.6.t">Лендинг или сайт-визитка</h3><p data-i18n="svc.6.d">Адаптивная вёрстка, форма заявки с уведомлением в Telegram, запуск на хостинге.</p></div><span class="cost" data-i18n="svc.6.p">от 4 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.2.t">Веб-приложение или Telegram Mini App под ключ</h3><p data-i18n="svc.2.d">Каталог, заявки, запись, личный кабинет, учёт — с вашей логикой и дизайном.</p></div><span class="cost" data-i18n="svc.2.p">от 15 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.7.t">Telegram-бот</h3><p data-i18n="svc.7.d">Заявки, каталог, запись, рассылки подписчикам — с панелью для вас.</p></div><span class="cost" data-i18n="svc.7.p">по договорённости</span></li>
+        <li><div><h3 data-i18n="svc.3.t">База данных и серверная часть</h3><p data-i18n="svc.3.d">Supabase и PostgreSQL: таблицы, права доступа, функции, проверка безопасности.</p></div><span class="cost" data-i18n="svc.3.p">от 3 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.4.t">Перенос на свой сервер в России</h3><p data-i18n="svc.4.d">Для проектов с персональными данными: перенос базы и файлов, резервные копии, инструкция.</p></div><span class="cost" data-i18n="svc.4.p">от 7 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.5.t">Программа для Mac и Windows</h3><p data-i18n="svc.5.d">Electron: сборка под обе системы и автообновление.</p></div><span class="cost" data-i18n="svc.5.p">по договорённости</span></li>
+      </ul>
+      <h3 class="sub-title" data-i18n="svc.design">Дизайн</h3>
+      <ul class="prices">
+        <li><div><h3 data-i18n="svc.8.t">Баннер, афиша или обложка</h3><p data-i18n="svc.8.d">Для соцсетей, сайта, маркетплейса или печати, в нужных размерах.</p></div><span class="cost" data-i18n="svc.8.p">от 1 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.9.t">Карусель для соцсетей</h3><p data-i18n="svc.9.d">Серия слайдов в едином стиле: структура, тексты на слайдах, вёрстка.</p></div><span class="cost" data-i18n="svc.9.p">по договорённости</span></li>
+        <li><div><h3 data-i18n="svc.10.t">Логотип и айдентика</h3><p data-i18n="svc.10.d">Знак, цвета, шрифты и правила использования; полиграфия по запросу.</p></div><span class="cost" data-i18n="svc.10.p">по договорённости</span></li>
+      </ul>
+      <h3 class="sub-title" data-i18n="svc.video">Видео</h3>
+      <ul class="prices">
+        <li><div><h3 data-i18n="svc.11.t">Монтаж Reels</h3><p data-i18n="svc.11.d">Нарезка, вырезка пауз и оговорок, субтитры, чистка звука.</p></div><span class="cost" data-i18n="svc.11.p">от 1 500 ₽</span></li>
+        <li><div><h3 data-i18n="svc.12.t">Монтаж с графикой и анимацией</h3><p data-i18n="svc.12.d">Анимация текста, инфографика, вставки, переходы и звуковые эффекты.</p></div><span class="cost" data-i18n="svc.12.p">от 3 000 ₽</span></li>
+        <li><div><h3 data-i18n="svc.13.t">Рекламный ролик с моушн-дизайном</h3><p data-i18n="svc.13.d">Ролик без съёмки: сцены, интерфейсы, 3D-элементы, текст.</p></div><span class="cost" data-i18n="svc.13.p">по договорённости</span></li>
+      </ul>
+      <div class="actions">
+        <a class="btn btn-main" data-tg href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-tg"/></svg><span data-i18n="btn.discuss">Обсудить задачу</span></a>
+        <a class="btn" data-wa="wa.general" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span data-i18n="btn.waShort">WhatsApp</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="process" data-theme="3" data-away="1" aria-labelledby="t-process">
+    <div class="wrap">
+      <h2 class="h2" id="t-process" data-i18n="proc.title">Как я работаю</h2>
+      <ol class="steps" style="--n: 4; margin-top: 56px">
+        <li><b data-i18n="proc.1.t">Вы пишете</b><span data-i18n="proc.1.d">В Telegram или WhatsApp — пару фраз о том, что нужно.</span></li>
+        <li><b data-i18n="proc.2.t">Называю цену и срок</b><span data-i18n="proc.2.d">Уточняю детали и фиксирую стоимость до начала работы.</span></li>
+        <li><b data-i18n="proc.3.t">Показываю по ходу</b><span data-i18n="proc.3.d">Вы видите результат до сдачи и можете поправить курс.</span></li>
+        <li><b data-i18n="proc.4.t">Сдаю работу</b><span data-i18n="proc.4.d">Проверяю всё сам на телефоне и компьютере, оплата после приёмки.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- the monogram comes back for the closing screen -->
+  <section class="stage" id="contact" data-theme="0" data-away="0" aria-labelledby="t-contact">
+    <div class="stage-copy">
+      <h2 class="h1" id="t-contact" data-split data-title="contact"><span class="line">Обсудим</span><span class="line"><em>вашу задачу?</em></span></h2>
+      <p class="lead" data-i18n="contact.lead">Напишите, как вам удобнее. Отвечу, задам пару вопросов и скажу, сколько это будет стоить.</p>
+      <div class="contacts">
+        <a class="btn btn-main" data-tg href="https://t.me/theavibra" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-tg"/></svg><span>Telegram — @theavibra</span></a>
+        <a class="btn" data-wa="wa.general" href="https://wa.me/79332156471" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span>WhatsApp — +7 933 215-64-71</span></a>
+        <a class="btn" data-channel href="#" target="_blank" rel="noopener" hidden><svg aria-hidden="true"><use href="#i-tg"/></svg><span data-i18n="btn.channel">Мой канал в Telegram</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Avibra, 2026</span>
+</footer>
+
+<div class="cursor-ring" aria-hidden="true"></div>
+<div class="cursor-dot" aria-hidden="true"></div>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { gsap } from 'gsap';
+
+/* Optional: path to your own .glb for the monogram (nodes "A" and "V" are used for the split).
+   Libraries are served from assets/vendor (three r169, gsap 3.13 core), not a CDN: jsDelivr is unreliable from Russia.
+   A custom model also needs three/examples/jsm/loaders/GLTFLoader.js copied to assets/vendor/loaders/. */
+const MODEL_URL = null;
+
+/* ---------- contacts: change them here ---------- */
+const TG_URL = 'https://t.me/theavibra';
+const WA_NUMBER = '79332156471';
+const TG_CHANNEL = '';   // e.g. 'https://t.me/channel_name' — the channel button appears once this is set
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root = document.documentElement;
+const mqMobile = matchMedia('(max-width: 760px)');
+const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+const mqFine = matchMedia('(hover: hover) and (pointer: fine)');
+let isMobile = mqMobile.matches;
+let reduce = mqReduce.matches;
+mqReduce.addEventListener('change', e => { reduce = e.matches; });
+
+/* ---------- i18n ---------- */
+const I18N = {
+  ru: {
+    'meta.title': 'Avibra — сайты, дизайн и видео для бизнеса',
+    'meta.desc': 'Сайты, веб-приложения, Telegram-боты, графический дизайн и монтаж Reels. Цена и срок — до начала работы.',
+    'nav.zapis': 'Запись для автосервиса', 'nav.services': 'Услуги', 'nav.works': 'Работы', 'nav.contact': 'Контакты',
+    'cta': 'Написать', 'menu': 'Меню', 'close': 'Закрыть',
+    'btn.tg': 'Написать в Telegram', 'btn.wa': 'Написать в WhatsApp', 'btn.tgShort': 'Telegram', 'btn.waShort': 'WhatsApp',
+    'btn.discuss': 'Обсудить задачу', 'btn.channel': 'Мой канал в Telegram',
+    'wa.general': 'Здравствуйте! Хочу обсудить проект.',
+    'wa.zapis': 'Здравствуйте! Хочу демо онлайн-записи для автосервиса.',
+    'hero.lead': "Разрабатываю сайты, веб-приложения и Telegram-ботов, делаю графический дизайн и монтирую ролики. Цену и срок называю до начала работы.",
+    'zapis.kicker': 'Готовое решение для автосервисов',
+    'zapis.title': 'Онлайн-запись для вашего автосервиса',
+    'zapis.lead': 'Клиент открывает ссылку, выбирает услугу и время и записывается сам, без звонка. Все записи — у вас в телефоне.',
+    'zapis.once': 'один раз, без абонентской платы', 'zapis.trial': 'Первая неделя бесплатно',
+    'zapis.want': 'Хочу демо', 'zapis.example': 'Открыть пример',
+    'more.title': 'Что получит ваш сервис',
+    'more.lead': 'Всё настраиваю сам: услуги, цены, время работы, фото и контакты. Вам остаётся принимать клиентов.',
+    'more.s1.t': 'Своя страница', 'more.s1.d': 'Логотип, фото, адрес, услуги и цены, кнопки «Позвонить», «Маршрут» и WhatsApp.',
+    'more.s2.t': 'Запись за минуту', 'more.s2.d': 'Клиент выбирает услуги, день и удобное время.',
+    'more.s3.t': 'Записи у вас в телефоне', 'more.s3.d': 'Кто приедет сегодня, календарь, ожидаемая выручка и статистика.',
+    'more.f1': 'Уведомление на телефон о каждой новой записи',
+    'more.f2': 'QR-код для визиток, стойки и ворот',
+    'more.f3': 'Светлая и тёмная тема, ваши цвета и логотип',
+    'more.f4': 'Работает в браузере — клиентам ничего не нужно скачивать',
+    'more.how': 'Как подключить',
+    'more.h1.t': 'Напишите мне', 'more.h1.d': 'Соберу демо с названием и услугами именно вашего сервиса.',
+    'more.h2.t': 'Неделя бесплатно', 'more.h2.d': 'Принимаете записи и смотрите, удобно ли вам и клиентам.',
+    'more.h3.t': 'Понравилось — 5 000 ₽', 'more.h3.d': 'Оплата один раз. Не понравилось — просто отказываетесь, ничего не должны.',
+    'svc.title': 'Цены',
+    'svc.lead': 'Цены стартовые. Точную назову после короткого разговора — и она не изменится по ходу работы.',
+    'svc.1.t': 'Исправлю ошибку или доработаю сайт', 'svc.1.d': 'Найду причину, исправлю и проверю на телефоне и компьютере.', 'svc.1.p': 'от 2 000 ₽',
+    'svc.2.t': 'Веб-приложение или Telegram Mini App под ключ', 'svc.2.d': 'Каталог, заявки, запись, личный кабинет, учёт — с вашей логикой и дизайном.', 'svc.2.p': 'от 15 000 ₽',
+    'svc.3.t': 'База данных и серверная часть', 'svc.3.d': 'Supabase и PostgreSQL: таблицы, права доступа, функции, проверка безопасности.', 'svc.3.p': 'от 3 000 ₽',
+    'svc.4.t': 'Перенос на свой сервер в России', 'svc.4.d': 'Для проектов с персональными данными: перенос базы и файлов, резервные копии, инструкция.', 'svc.4.p': 'от 7 000 ₽',
+    'svc.5.t': 'Программа для Mac и Windows', 'svc.5.d': 'Electron: сборка под обе системы и автообновление.', 'svc.5.p': 'по договорённости',
+    'qayd.kicker': 'Мой продукт', 'qayd.title': 'Qayd — учёт для магазина',
+    'qayd.lead': 'Telegram Mini App: товары, остатки, продажи, финансы, работа команды и витрина. Каждый день работает в реальном магазине.',
+    'qayd.note': 'Реальное приложение, на экране демо-данные.',
+    'wasl.kicker': 'Мой продукт', 'wasl.title': 'Wasl — два компьютера как один',
+    'wasl.lead': 'Одна мышь и клавиатура для Mac и Windows, общий буфер обмена, файлы и звук по локальной сети.',
+    'wasl.dl': 'Скачать Wasl',
+    'proc.title': 'Как я работаю',
+    'proc.1.t': 'Вы пишете', 'proc.1.d': 'В Telegram или WhatsApp — пару фраз о том, что нужно.',
+    'proc.2.t': 'Называю цену и срок', 'proc.2.d': 'Уточняю детали и фиксирую стоимость до начала работы.',
+    'proc.3.t': 'Показываю по ходу', 'proc.3.d': 'Вы видите результат до сдачи и можете поправить курс.',
+    'proc.4.t': 'Сдаю работу', 'proc.4.d': 'Проверяю всё сам на телефоне и компьютере, оплата после приёмки.',
+    'contact.lead': 'Напишите, как вам удобнее. Отвечу, задам пару вопросов и скажу, сколько это будет стоить.',
+    'mac.file': 'Файл', 'mac.edit': 'Правка', 'mac.view': 'Вид', 'mac.window': 'Окно', 'mac.time': 'Пн 10:24',
+    'a.brand': 'Avibra, наверх', 'a.sections': 'Разделы', 'a.lang': 'Язык: русский',
+    'a.zapisAlt': 'Страница записи автосервиса «Протектор», демо', 'a.s1': 'Страница сервиса с кнопками и услугами, демо',
+    'a.s2': 'Выбор даты и времени записи, демо', 'a.s3': 'Экран «Сегодня» с записями и ожидаемой выручкой, демо',
+    'a.qaydAlt': 'Главный экран Qayd, демо-данные', 'a.waslAlt': 'Главный экран приложения Wasl',
+    "nav.dev": "Разработка",
+    "nav.design": "Дизайн",
+    "nav.video": "Видео",
+    "nav.prices": "Цены",
+    "radar.kicker": "Мой продукт",
+    "radar.title": "Avibra Radar",
+    "radar.lead": "Telegram-бот, который находит заказы для фрилансеров на биржах и в чатах и присылает их сразу после публикации.",
+    "radar.more": "Подробнее о боте",
+    "radar.alt": "Avibra Radar: бот с заказами для фрилансеров",
+    "dirs.title": "Чем могу помочь",
+    "dirs.lead": "Три направления — откройте нужное. Каждую ссылку можно отправить отдельно.",
+    "dirs.1.t": "Разработка",
+    "dirs.1.d": "Сайты и лендинги, веб-приложения, Telegram Mini Apps и боты, программы для ПК.",
+    "dirs.1.p": "от 2 000 ₽",
+    "dirs.2.t": "Графический дизайн",
+    "dirs.2.d": "Логотипы и айдентика, баннеры, афиши, карусели для соцсетей, полиграфия.",
+    "dirs.2.p": "от 1 000 ₽",
+    "dirs.3.t": "Видео и моушн-дизайн",
+    "dirs.3.d": "Reels и монтаж, анимация текста, графика и инфографика, динамичные ролики.",
+    "dirs.3.p": "от 1 500 ₽",
+    "dirs.open": "Смотреть",
+    "dev.kicker": "Направление 01",
+    "dev.title": "Разработка",
+    "dev.lead": "Сайты, веб-приложения и Telegram Mini Apps под ключ: от макета до запуска. Ниже — мои проекты, они работают на самом деле.",
+    "dev.c1": "Сайты и лендинги",
+    "dev.c2": "Веб-приложения",
+    "dev.c3": "Telegram Mini Apps",
+    "dev.c4": "Telegram-боты",
+    "dev.c5": "Программы для ПК",
+    "dev.c6": "Доработки и исправления",
+    "design.kicker": "Направление 02",
+    "design.title": "Графический дизайн",
+    "design.lead": "Логотипы, айдентика, баннеры и карусели — в едином стиле бренда и с расчётом на телефон.",
+    "design.g1": "Логотип Avibra",
+    "design.g1d": "Знак и айдентика студии",
+    "design.g2": "Баннер профиля",
+    "design.g2d": "Обложка для мессенджеров и соцсетей",
+    "design.g3": "Карусель для Instagram",
+    "design.g3d": "Обложка серии из 7 слайдов",
+    "design.g4": "Карусель для Instagram",
+    "design.g4d": "Слайд: заказ на кухне",
+    "design.g5": "Карусель для Instagram",
+    "design.g5d": "Слайд: ваше меню",
+    "video.kicker": "Направление 03",
+    "video.title": "Видео и моушн-дизайн",
+    "video.lead": "Монтаж Reels и рекламных роликов: субтитры, анимация текста, 3D-телефоны, инфографика и звуковые эффекты.",
+    "video.v1": "Reels с ведущим",
+    "video.v1d": "Съёмка, монтаж, субтитры и анимация интерфейса · 40 с",
+    "video.v2": "Рекламный Reels",
+    "video.v2d": "Моушн-дизайн без съёмки: интерфейс, 3D-телефон, субтитры · 29 с",
+    "svc.dev": "Разработка",
+    "svc.design": "Дизайн",
+    "svc.video": "Видео",
+    "svc.6.t": "Лендинг или сайт-визитка",
+    "svc.6.d": "Адаптивная вёрстка, форма заявки с уведомлением в Telegram, запуск на хостинге.",
+    "svc.6.p": "от 4 000 ₽",
+    "svc.7.t": "Telegram-бот",
+    "svc.7.d": "Заявки, каталог, запись, рассылки подписчикам — с панелью для вас.",
+    "svc.7.p": "по договорённости",
+    "svc.8.t": "Баннер, афиша или обложка",
+    "svc.8.d": "Для соцсетей, сайта, маркетплейса или печати, в нужных размерах.",
+    "svc.8.p": "от 1 000 ₽",
+    "svc.9.t": "Карусель для соцсетей",
+    "svc.9.d": "Серия слайдов в едином стиле: структура, тексты на слайдах, вёрстка.",
+    "svc.9.p": "по договорённости",
+    "svc.10.t": "Логотип и айдентика",
+    "svc.10.d": "Знак, цвета, шрифты и правила использования; полиграфия по запросу.",
+    "svc.10.p": "по договорённости",
+    "svc.11.t": "Монтаж Reels",
+    "svc.11.d": "Нарезка, вырезка пауз и оговорок, субтитры, чистка звука.",
+    "svc.11.p": "от 1 500 ₽",
+    "svc.12.t": "Монтаж с графикой и анимацией",
+    "svc.12.d": "Анимация текста, инфографика, вставки, переходы и звуковые эффекты.",
+    "svc.12.p": "от 3 000 ₽",
+    "svc.13.t": "Рекламный ролик с моушн-дизайном",
+    "svc.13.d": "Ролик без съёмки: сцены, интерфейсы, 3D-элементы, текст.",
+    "svc.13.p": "по договорённости",
+    titles: { hero: ['Сайты, дизайн и видео', 'для вашего бизнеса.'], contact: ['Обсудим', 'вашу задачу?'] },
+  },
+  en: {
+    'meta.title': 'Avibra — websites, design and video for business',
+    'meta.desc': 'Websites, web apps, Telegram bots, graphic design and Reels editing. Price and deadline before I start.',
+    'nav.zapis': 'Booking for car services', 'nav.services': 'Services', 'nav.works': 'Work', 'nav.contact': 'Contact',
+    'cta': 'Message me', 'menu': 'Menu', 'close': 'Close',
+    'btn.tg': 'Message on Telegram', 'btn.wa': 'Message on WhatsApp', 'btn.tgShort': 'Telegram', 'btn.waShort': 'WhatsApp',
+    'btn.discuss': 'Discuss your project', 'btn.channel': 'My Telegram channel',
+    'wa.general': 'Hello! I would like to discuss a project.',
+    'wa.zapis': 'Hello! I would like a demo of the car service booking app.',
+    'hero.lead': "I build websites, web apps and Telegram bots, do graphic design and edit videos. You get the price and the deadline before I start.",
+    'zapis.kicker': 'Ready-made for car services',
+    'zapis.title': 'Online booking for your car service',
+    'zapis.lead': 'A customer opens a link, picks a service and a time, and books without calling. Every booking lands on your phone.',
+    'zapis.once': 'one time, no subscription', 'zapis.trial': 'First week free',
+    'zapis.want': 'Get a demo', 'zapis.example': 'Open the example',
+    'more.title': 'What your shop gets',
+    'more.lead': 'I set everything up: services, prices, opening hours, photos and contacts. You just take the customers.',
+    'more.s1.t': 'Your own page', 'more.s1.d': 'Logo, photos, address, services and prices, plus Call, Directions and WhatsApp buttons.',
+    'more.s2.t': 'Booking in a minute', 'more.s2.d': 'The customer picks services, a day and a convenient time.',
+    'more.s3.t': 'Bookings on your phone', 'more.s3.d': 'Who is coming today, a calendar, expected revenue and stats.',
+    'more.f1': 'A phone notification for every new booking',
+    'more.f2': 'A QR code for business cards, the desk and the gate',
+    'more.f3': 'Light and dark themes, your colours and logo',
+    'more.f4': 'Runs in the browser — customers install nothing',
+    'more.how': 'How to start',
+    'more.h1.t': 'Message me', 'more.h1.d': 'I build a demo with your shop’s name and services.',
+    'more.h2.t': 'One week free', 'more.h2.d': 'Take real bookings and see if it works for you and your customers.',
+    'more.h3.t': 'Like it — 5,000 ₽', 'more.h3.d': 'A single payment. Don’t like it — just say no, you owe nothing.',
+    'svc.title': 'Prices',
+    'svc.lead': 'Starting prices. I name the exact one after a short talk, and it doesn’t change along the way.',
+    'svc.1.t': 'Fix a bug or improve a website', 'svc.1.d': 'I find the cause, fix it and check it on phone and desktop.', 'svc.1.p': 'from 2,000 ₽',
+    'svc.2.t': 'A web app or Telegram Mini App, end to end', 'svc.2.d': 'Catalogue, requests, booking, accounts, inventory — your logic and design.', 'svc.2.p': 'from 15,000 ₽',
+    'svc.3.t': 'Database and backend', 'svc.3.d': 'Supabase and PostgreSQL: tables, access rules, functions, a security review.', 'svc.3.p': 'from 3,000 ₽',
+    'svc.4.t': 'Moving to your own server in Russia', 'svc.4.d': 'For projects with personal data: database and files moved, backups, a guide.', 'svc.4.p': 'from 7,000 ₽',
+    'svc.5.t': 'A desktop app for Mac and Windows', 'svc.5.d': 'Electron: builds for both systems and auto-update.', 'svc.5.p': 'by agreement',
+    'qayd.kicker': 'My product', 'qayd.title': 'Qayd — inventory for a shop',
+    'qayd.lead': 'A Telegram Mini App: products, stock, sales, finances, the team and a storefront. Used every day by a real shop.',
+    'qayd.note': 'The real app, showing demo data.',
+    'wasl.kicker': 'My product', 'wasl.title': 'Wasl — two computers as one',
+    'wasl.lead': 'One mouse and keyboard for a Mac and a Windows PC, a shared clipboard, files and sound over the local network.',
+    'wasl.dl': 'Download Wasl',
+    'proc.title': 'How I work',
+    'proc.1.t': 'You message me', 'proc.1.d': 'On Telegram or WhatsApp — a couple of lines about what you need.',
+    'proc.2.t': 'I name a price and a date', 'proc.2.d': 'I clarify the details and fix the cost before starting.',
+    'proc.3.t': 'You see progress', 'proc.3.d': 'You see the result before delivery and can steer it.',
+    'proc.4.t': 'Delivery', 'proc.4.d': 'I test everything on phone and desktop; payment after you accept the work.',
+    'contact.lead': 'Write wherever suits you. I will reply, ask a couple of questions and tell you what it will cost.',
+    'mac.file': 'File', 'mac.edit': 'Edit', 'mac.view': 'View', 'mac.window': 'Window', 'mac.time': 'Mon 10:24',
+    'a.brand': 'Avibra, back to top', 'a.sections': 'Sections', 'a.lang': 'Language: English',
+    'a.zapisAlt': 'Booking page of the “Protector” car service, demo', 'a.s1': 'Service page with buttons and services, demo',
+    'a.s2': 'Picking a booking date and time, demo', 'a.s3': 'The Today screen with bookings and expected revenue, demo',
+    'a.qaydAlt': 'Qayd home screen, demo data', 'a.waslAlt': 'Wasl desktop app, main screen',
+    "nav.dev": "Development",
+    "nav.design": "Design",
+    "nav.video": "Video",
+    "nav.prices": "Prices",
+    "radar.kicker": "My product",
+    "radar.title": "Avibra Radar",
+    "radar.lead": "A Telegram bot that finds freelance orders on job boards and in chats and sends them the moment they are posted.",
+    "radar.more": "About the bot",
+    "radar.alt": "Avibra Radar: a bot with freelance orders",
+    "dirs.title": "What I do",
+    "dirs.lead": "Three directions — open the one you need. Each link can be shared on its own.",
+    "dirs.1.t": "Development",
+    "dirs.1.d": "Websites and landing pages, web apps, Telegram Mini Apps and bots, desktop apps.",
+    "dirs.1.p": "from 2,000 ₽",
+    "dirs.2.t": "Graphic design",
+    "dirs.2.d": "Logos and identity, banners, posters, social carousels, print.",
+    "dirs.2.p": "from 1,000 ₽",
+    "dirs.3.t": "Video & motion design",
+    "dirs.3.d": "Reels and editing, animated text, graphics and infographics, dynamic videos.",
+    "dirs.3.p": "from 1,500 ₽",
+    "dirs.open": "View",
+    "dev.kicker": "Direction 01",
+    "dev.title": "Development",
+    "dev.lead": "Websites, web apps and Telegram Mini Apps end to end, from layout to launch. Below are my projects — they are real and running.",
+    "dev.c1": "Websites & landing pages",
+    "dev.c2": "Web apps",
+    "dev.c3": "Telegram Mini Apps",
+    "dev.c4": "Telegram bots",
+    "dev.c5": "Desktop apps",
+    "dev.c6": "Fixes & improvements",
+    "design.kicker": "Direction 02",
+    "design.title": "Graphic design",
+    "design.lead": "Logos, identity, banners and carousels — one brand style, designed for the phone first.",
+    "design.g1": "Avibra logo",
+    "design.g1d": "Studio mark and identity",
+    "design.g2": "Profile banner",
+    "design.g2d": "Cover for messengers and social media",
+    "design.g3": "Instagram carousel",
+    "design.g3d": "Cover of a 7-slide series",
+    "design.g4": "Instagram carousel",
+    "design.g4d": "Slide: the order in the kitchen",
+    "design.g5": "Instagram carousel",
+    "design.g5d": "Slide: your menu",
+    "video.kicker": "Direction 03",
+    "video.title": "Video & motion design",
+    "video.lead": "Editing Reels and promo videos: captions, animated text, 3D phones, infographics and sound effects.",
+    "video.v1": "Reel with a presenter",
+    "video.v1d": "Shooting, editing, captions and UI animation · 40 s",
+    "video.v2": "Promo Reel",
+    "video.v2d": "Motion design without shooting: UI, a 3D phone, captions · 29 s",
+    "svc.dev": "Development",
+    "svc.design": "Design",
+    "svc.video": "Video",
+    "svc.6.t": "Landing page or one-page site",
+    "svc.6.d": "Responsive layout, a request form with Telegram notifications, launch on hosting.",
+    "svc.6.p": "from 4,000 ₽",
+    "svc.7.t": "Telegram bot",
+    "svc.7.d": "Requests, catalogue, booking, broadcasts — with a panel for you.",
+    "svc.7.p": "by agreement",
+    "svc.8.t": "Banner, poster or cover",
+    "svc.8.d": "For social media, a website, a marketplace or print, in the sizes you need.",
+    "svc.8.p": "from 1,000 ₽",
+    "svc.9.t": "Social media carousel",
+    "svc.9.d": "A series of slides in one style: structure, on-slide copy, layout.",
+    "svc.9.p": "by agreement",
+    "svc.10.t": "Logo and identity",
+    "svc.10.d": "Mark, colours, typefaces and usage rules; print on request.",
+    "svc.10.p": "by agreement",
+    "svc.11.t": "Reels editing",
+    "svc.11.d": "Cutting, removing pauses and slips, captions, audio clean-up.",
+    "svc.11.p": "from 1,500 ₽",
+    "svc.12.t": "Editing with graphics and animation",
+    "svc.12.d": "Animated text, infographics, inserts, transitions and sound effects.",
+    "svc.12.p": "from 3,000 ₽",
+    "svc.13.t": "Promo video with motion design",
+    "svc.13.d": "A video without shooting: scenes, interfaces, 3D elements, text.",
+    "svc.13.p": "by agreement",
+    titles: { hero: ['Websites, design and video', 'for your business.'], contact: ['Shall we talk', 'about your project?'] },
+  },
+};
+
+const LANG_KEY = 'avibra-lang';
+const RU_FAMILY = ['ru', 'be', 'kk', 'ky', 'tg'];
+
+function detectLang() {
+  try { const saved = localStorage.getItem(LANG_KEY); if (saved in I18N) return saved; } catch (e) {}
+  const prefs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en'];
+  for (const tag of prefs) {
+    const code = String(tag).toLowerCase().slice(0, 2);
+    if (RU_FAMILY.includes(code)) return 'ru';
+    if (code === 'en') return 'en';
+  }
+  return 'en';
+}
+
+
+function splitTitle(h) {
+  h.setAttribute('aria-label', h.textContent.replace(/\s+/g, ' ').trim());
+  let i = 0;
+  $$('.line', h).forEach(line => {
+    const host = line.querySelector('em') || line;
+    const words = host.textContent.trim().split(/\s+/);
+    host.textContent = '';
+    words.forEach((w, wi) => {
+      const ws = document.createElement('span');
+      ws.className = 'word';
+      ws.setAttribute('aria-hidden', 'true');
+      for (const ch of w) {
+        const c = document.createElement('span');
+        c.className = 'char';
+        c.textContent = ch;
+        c.style.setProperty('--i', i++);
+        ws.appendChild(c);
+      }
+      host.appendChild(ws);
+      if (wi < words.length - 1) host.appendChild(document.createTextNode(' '));
+    });
+  });
+}
+
+
+let lang = null;
+const langHooks = [];   // the 3D MacBook redraws its menu bar
+function applyLang(next) {
+  const dict = I18N[next] || I18N.ru;
+  lang = next;
+  root.lang = next;
+  $$('[data-i18n]').forEach(el => { const v = dict[el.dataset.i18n]; if (v != null) el.textContent = v; });
+  $$('[data-i18n-attr]').forEach(el => {
+    el.dataset.i18nAttr.split(';').forEach(pair => {
+      const [attr, key] = pair.split(':');
+      if (dict[key] != null) el.setAttribute(attr, dict[key]);
+    });
+  });
+  $$('[data-title]').forEach(h => {
+    const [a, b] = dict.titles[h.dataset.title];
+    h.innerHTML = '';
+    const l1 = document.createElement('span'); l1.className = 'line'; l1.textContent = a;
+    const l2 = document.createElement('span'); l2.className = 'line';
+    const em = document.createElement('em'); em.textContent = b; l2.appendChild(em);
+    h.append(l1, l2);
+    splitTitle(h);
+  });
+  // links: WhatsApp opens with a ready first message in the current language
+  $$('a[data-wa]').forEach(a => { a.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(dict[a.dataset.wa] || '')}`; });
+  $$('a[data-tg]').forEach(a => { a.href = TG_URL; });
+  $$('a[data-channel]').forEach(a => { a.hidden = !TG_CHANNEL; if (TG_CHANNEL) a.href = TG_CHANNEL; });
+  $('.lang-cur').textContent = next.toUpperCase();
+  $$('.lang-menu [data-lang]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.lang === next)));
+  langHooks.forEach(f => f(dict));
+}
+applyLang(detectLang());
+
+/* language menu */
+const langBtn = $('.lang-btn'), langMenu = $('.lang-menu');
+function closeLang() { langMenu.hidden = true; langBtn.setAttribute('aria-expanded', 'false'); }
+langBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const open = langMenu.hidden;
+  langMenu.hidden = !open;
+  langBtn.setAttribute('aria-expanded', String(open));
+  if (open) langMenu.querySelector('[aria-checked="true"]')?.focus();
+});
+langMenu.addEventListener('click', e => {
+  const b = e.target.closest('[data-lang]');
+  if (!b) return;
+  try { localStorage.setItem(LANG_KEY, b.dataset.lang); } catch (err) {}
+  closeLang();
+  if (b.dataset.lang !== lang) applyLang(b.dataset.lang);
+  if (e.detail === 0) langBtn.focus();
+});
+document.addEventListener('click', e => { if (!langMenu.hidden && !e.target.closest('.lang')) closeLang(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !langMenu.hidden) { closeLang(); langBtn.focus(); } });
+
+/* mobile menu */
+const menuBtn = $('.menu-btn'), mnav = $('#mnav');
+function closeMenu() { mnav.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); }
+menuBtn.addEventListener('click', () => { mnav.hidden = false; menuBtn.setAttribute('aria-expanded', 'true'); $('.close', mnav).focus(); });
+$('.close', mnav).addEventListener('click', () => { closeMenu(); menuBtn.focus(); });
+$$('a', mnav).forEach(a => a.addEventListener('click', closeMenu));
+addEventListener('keydown', e => { if (e.key === 'Escape' && !mnav.hidden) { closeMenu(); menuBtn.focus(); } });
+
+/* ---------- pointer + custom cursor ---------- */
+const ring = $('.cursor-ring'), dot = $('.cursor-dot');
+let px = innerWidth / 2, py = innerHeight / 2, rx = px, ry = py;
+let tmx = 0, tmy = 0, mx = 0, my = 0;
+function enableCursor(on) { document.body.classList.toggle('has-cursor', on && !reduce); }
+enableCursor(mqFine.matches);
+mqFine.addEventListener('change', e => enableCursor(e.matches));
+addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;
+  px = e.clientX; py = e.clientY;
+  tmx = (px / innerWidth) * 2 - 1;
+  tmy = (py / innerHeight) * 2 - 1;
+  document.body.classList.remove('cursor-out');
+  dot.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+}, { passive: true });
+document.addEventListener('pointerleave', () => document.body.classList.add('cursor-out'));
+document.addEventListener('pointerover', e => ring.classList.toggle('is-hover', !!e.target.closest('a, button')));
+
+
+/* ---------- palette: one stop per stage, interpolated continuously ---------- */
+const hex = a => a.map(h => new THREE.Color(h));
+const PAL = {
+  metal:  hex(['#6e4526', '#8a6a3b', '#525d6b', '#78839a']),
+  key:    hex(['#ffc894', '#ffebc9', '#d2e1ff', '#eef2ff']),
+  rim:    hex(['#e0935c', '#e6be86', '#4a82ff', '#6e93dd']),
+  bgBase: hex(['#070504', '#080604', '#05070a', '#03050b']),
+  bgTint: hex(['#5c3318', '#5f4424', '#1c2a3c', '#112346']),
+  bgHi:   hex(['#ffb57a', '#ffe0ad', '#a0c4ff', '#bacdff']),
+  part:   hex(['#ffa964', '#f2d19d', '#8cb2ff', '#bccdf2']),
+  accent: hex(['#c8925f', '#d2b07a', '#8fb0e2', '#a9b9d9']),
+};
+const CAM = {
+  ang: [-0.42, 0.52, 1.42, 2.24],
+  hgt: [0.35, 0.85, 0.05, 0.55],
+  rad: [6.1, 7.0, 6.6, 7.3],
+  shx: [0.16, 0.0, 0.17, 0.17],   // horizontal framing (desktop), fraction of width
+  shy: [0.02, 0.1, 0.04, 0.03],   // vertical framing (desktop)
+  shyM: [0.3, 0.25, 0.19, 0.21],    // mobile: object in the upper part, above the copy
+  env: [0.32, 0.4, 0.46, 0.36],
+  rough: [0.4, 0.36, 0.28, 0.32],
+  keyI: [2.5, 2.7, 1.8, 2.1],
+  rimI: [2.6, 2.3, 4.2, 3.2],
+};
+// smootherstep: starts and stops with zero speed and zero acceleration, so nothing snaps into motion
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * t * (t * (t * 6 - 15) + 10); };
+function stageMix(p) {
+  const f = Math.min(1, Math.max(0, p)) * 3;
+  const i = Math.min(2, Math.floor(f));
+  const t = smooth(0, 1, f - i);
+  return [i, t];
+}
+const mixN = (arr, i, t) => arr[i] + (arr[i + 1] - arr[i]) * t;
+const tmpC = new THREE.Color();
+const mixC = (arr, i, t, out = tmpC) => out.lerpColors(arr[i], arr[i + 1], t);
+const srgb = {};
+function setVecSRGB(vec, color) { color.getRGB(srgb, THREE.SRGBColorSpace); vec.set(srgb.r, srgb.g, srgb.b); }
+
+/* ---------- WebGL ---------- */
+function createGL() {
+  const canvas = $('#gl');
+  let renderer;
+  try {
+    // on 2× and 3× screens the pixels are too small for stair-steps to show, so MSAA there is pure GPU cost
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: (devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
+  } catch (err) { return null; }
+  if (!renderer.getContext()) return null;
+
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.autoClear = false;
+  renderer.setClearColor(0x050506, 1);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 60);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const room = new RoomEnvironment();
+  scene.environment = pmrem.fromScene(room, 0.04).texture;
+  room.dispose?.();
+  pmrem.dispose();
+
+  const key = new THREE.DirectionalLight(0xffffff, 2.5); key.position.set(3.5, 4, 4.5);
+  const rim = new THREE.DirectionalLight(0xffffff, 3.0); rim.position.set(-4.5, 1.6, -5);
+  const low = new THREE.DirectionalLight(0xffffff, 0.7); low.position.set(0.5, -4, 2.5);
+  scene.add(key, rim, low);
+
+  const metal = new THREE.MeshPhysicalMaterial({
+    color: PAL.metal[0], metalness: 1, roughness: 0.36,
+    clearcoat: 0.3, clearcoatRoughness: 0.28, envMapIntensity: 0.45, flatShading: true,
+  });
+
+  /* Procedural AV sculpture: blade-like strokes with a diamond cross-section,
+     swept along curves; A and V weave through each other in depth. */
+  function stroke(points, radius, { width = 1.25, depth = 0.7, segs = 240 } = {}) {
+    const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), false, 'centripetal');
+    const geo = new THREE.TubeGeometry(curve, segs, radius, 4, false);
+    const frames = curve.computeFrenetFrames(segs, false);
+    const pos = geo.attributes.position, ringN = 5;
+    const c = new THREE.Vector3(), d = new THREE.Vector3();
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      curve.getPointAt(t, c);
+      const edge = Math.min(t, 1 - t);
+      const taper = Math.max(0.03, Math.pow(Math.min(1, edge / 0.16), 0.6));
+      const swell = 0.88 + 0.24 * Math.sin(Math.PI * t);
+      const N = frames.normals[i], B = frames.binormals[i];
+      for (let j = 0; j < ringN; j++) {
+        const k = i * ringN + j;
+        d.fromBufferAttribute(pos, k).sub(c);
+        const n = d.dot(N) * width * taper * swell;
+        const b = d.dot(B) * depth * taper * swell;
+        pos.setXYZ(k, c.x + N.x * n + B.x * b, c.y + N.y * n + B.y * b, c.z + N.z * n + B.z * b);
+      }
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const A_PATH = [[-1.02, -1.34, 0.10], [-0.78, -0.72, 0.15], [-0.53, -0.09, 0.15], [-0.28, 0.58, 0.08],
+    [-0.12, 1.1, 0.02], [0, 1.33, 0], [0.12, 1.1, -0.02], [0.28, 0.58, -0.08], [0.53, -0.09, -0.15], [0.78, -0.72, -0.15], [1.02, -1.34, -0.10]];
+  const BAR_PATH = [[-0.84, -0.47, 0.07], [-0.36, -0.34, 0.04], [0.36, -0.34, -0.04], [0.84, -0.47, -0.07]];
+  const V_PATH = [[-1.16, 1.26, -0.10], [-0.9, 0.64, -0.15], [-0.53, -0.09, -0.15], [-0.28, -0.7, -0.08],
+    [-0.12, -1.14, -0.02], [0, -1.36, 0], [0.12, -1.14, 0.02], [0.28, -0.7, 0.08], [0.53, -0.09, 0.15], [0.9, 0.64, 0.15], [1.16, 1.26, 0.10]];
+
+  const sculpture = new THREE.Group();
+  const partA = new THREE.Group(), partV = new THREE.Group();
+  partA.add(new THREE.Mesh(stroke(A_PATH, 0.085), metal));
+  partA.add(new THREE.Mesh(stroke(BAR_PATH, 0.052, { segs: 90 }), metal));
+  partV.add(new THREE.Mesh(stroke(V_PATH, 0.08), metal));
+  sculpture.add(partA, partV);
+  sculpture.scale.setScalar(0.8);
+  scene.add(sculpture);
+  const parts = { a: partA, v: partV };
+
+  async function loadCustomModel(url) {
+    const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+    const gltf = await new GLTFLoader().loadAsync(url);
+    const obj = gltf.scene;
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3());
+    obj.position.sub(box.getCenter(new THREE.Vector3()));
+    const wrap = new THREE.Group();
+    wrap.add(obj);
+    wrap.scale.setScalar(2.7 / Math.max(size.y, 1e-6));
+    obj.traverse(o => { if (o.isMesh) o.material = metal; });
+    sculpture.clear();
+    sculpture.add(wrap);
+    parts.a = obj.getObjectByName('A') || null;
+    parts.v = obj.getObjectByName('V') || null;
+  }
+  if (MODEL_URL) loadCustomModel(MODEL_URL).catch(err => console.warn('Custom model failed, keeping procedural sculpture', err));
+
+  /* Liquid-metal background: domain-warped fbm, shaded with screen-space derivatives. */
+  const bgScene = new THREE.Scene();
+  const bgCam = new THREE.Camera();
+  const bgMat = new THREE.ShaderMaterial({
+    defines: { OCT: isMobile ? 3 : 4 },
+    uniforms: {
+      uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
+      uBase: { value: new THREE.Vector3() }, uTint: { value: new THREE.Vector3() }, uHi: { value: new THREE.Vector3() },
+      uGlow: { value: new THREE.Vector2(0.66, 0.5) }, uDim: { value: 0 },
+    },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `
+      precision highp float;
+      varying vec2 vUv;
+      uniform float uTime; uniform vec2 uRes; uniform vec3 uBase, uTint, uHi; uniform vec2 uGlow; uniform float uDim;
+      float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+      float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }
+      float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int k = 0; k < OCT; k++){ v += a * noise(p); p = p * 2.03 + vec2(17.1, 9.2); a *= 0.5; } return v; }
+      void main(){
+        float asp = uRes.x / uRes.y;
+        vec2 p = (vUv - 0.5) * vec2(asp, 1.0) * 2.2;
+        vec2 q = vec2(fbm(p * 0.8 + vec2(0.0, uTime * 0.010)), fbm(p * 0.8 + vec2(5.2, -uTime * 0.008)));
+        float h = fbm(p * 1.3 + q * 1.6 + vec2(uTime * 0.006, 0.0));
+        vec2 slope = vec2(dFdx(h), dFdy(h)) * uRes.y * 0.9;
+        vec3 n = normalize(vec3(-slope, 1.0));
+        vec3 L = normalize(vec3(-0.45, 0.55, 0.7));
+        float diff = max(dot(n, L), 0.0);
+        float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 28.0);
+        vec2 g = (vUv - uGlow) * vec2(asp, 1.0);
+        float glow = exp(-dot(g, g) * 2.6);
+        float vig = smoothstep(1.45, 0.2, length((vUv - 0.5) * vec2(asp, 1.0) * 1.25));
+        vec3 col = uBase
+          + uTint * (0.08 + diff * 0.2) * (0.3 + 0.7 * glow)
+          + uHi * spec * 0.06 * (0.25 + 0.75 * glow)
+          + uTint * glow * 0.16;
+        col *= vig * (1.0 - uDim);
+        col += (hash(vUv * uRes + fract(uTime)) - 0.5) * 0.008;
+        gl_FragColor = vec4(max(col, 0.0), 1.0);
+      }`,
+    depthTest: false, depthWrite: false,
+  });
+  const tri = new THREE.BufferGeometry();
+  tri.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  // the liquid background is soft, so it is drawn at half resolution and scaled up; that leaves the GPU
+  // free to draw the sculpture and the devices at the full pixel ratio
+  const bgRT = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+  const blitScene = new THREE.Scene();
+  const blit = new THREE.Mesh(tri, new THREE.ShaderMaterial({
+    uniforms: { tBg: { value: bgRT.texture } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `uniform sampler2D tBg; varying vec2 vUv; void main(){ gl_FragColor = texture2D(tBg, vUv); }`,
+    depthTest: false, depthWrite: false,
+  }));
+  blit.frustumCulled = false;
+  blitScene.add(blit);
+  const bgMesh = new THREE.Mesh(tri, bgMat);
+  bgMesh.frustumCulled = false;
+  bgScene.add(bgMesh);
+
+  /* Metallic particles: warm early, cooler later; faster with scroll energy. */
+  const COUNT = reduce ? 120 : isMobile ? 180 : 520;
+  const pPos = new Float32Array(COUNT * 3), pSeed = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    pPos[i * 3] = (Math.random() * 2 - 1) * 4.2;
+    pPos[i * 3 + 1] = (Math.random() * 2 - 1) * 3;
+    pPos[i * 3 + 2] = (Math.random() * 2 - 1) * 3.2;
+    pSeed[i * 3] = Math.random(); pSeed[i * 3 + 1] = Math.random(); pSeed[i * 3 + 2] = Math.random();
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('aSeed', new THREE.BufferAttribute(pSeed, 3));
+  const pMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uPhase: { value: 0 }, uFlow: { value: 0 }, uSize: { value: 2.2 },
+      uPR: { value: 1 }, uColor: { value: new THREE.Vector3(1, .7, .4) }, uOpacity: { value: 0.4 },
+    },
+    vertexShader: `
+      attribute vec3 aSeed;
+      uniform float uTime, uPhase, uFlow, uSize, uPR;
+      varying float vA;
+      void main(){
+        vec3 p = position;
+        p.y = mod(p.y + uPhase * (0.16 + aSeed.x * 0.34) + 3.0, 6.0) - 3.0;
+        p.x += sin(uTime * 0.15 + aSeed.y * 6.2831) * 0.18 + uFlow * sin(uTime * 0.55 + p.y * 1.7 + aSeed.z * 6.2831) * 0.45;
+        p.z += cos(uTime * 0.12 + aSeed.z * 6.2831) * 0.18;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float tw = 0.5 + 0.5 * sin(uTime * (0.5 + aSeed.x * 1.4) + aSeed.y * 40.0);
+        vA = (0.12 + 0.88 * tw * tw * tw) * smoothstep(3.0, 2.2, abs(p.y));
+        gl_PointSize = uSize * uPR * (0.35 + aSeed.z * 0.9) * (6.0 / -mv.z);
+      }`,
+    fragmentShader: `
+      precision highp float;
+      uniform vec3 uColor; uniform float uOpacity;
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.0, d); a *= a;
+        gl_FragColor = vec4(uColor, a * vA * uOpacity);
+      }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  });
+  const points = new THREE.Points(pGeo, pMat);
+  points.frustumCulled = false;
+  scene.add(points);
+
+
+  /* ---------- 3D devices: Qayd on an iPhone, Wasl on a MacBook ----------
+     Each is fitted into its section's .device-box, so layout stays in CSS. */
+  const devScene = new THREE.Scene();
+  devScene.environment = scene.environment;
+  const DEV_D = 12;
+  const devCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);   // view offset set per frame
+  devCam.position.set(0, 0, DEV_D);
+  const devKey = new THREE.DirectionalLight(0xffffff, 2.4); devKey.position.set(-2.5, 3, 5);
+  const devRim = new THREE.DirectionalLight(0xffffff, 2.2); devRim.position.set(3.5, 1.5, -3);
+  const devFill = new THREE.DirectionalLight(0xffffff, 0.6); devFill.position.set(2, -1, 4);
+  devScene.add(devKey, devRim, devFill);
+  const aniso = renderer.capabilities.getMaxAnisotropy();
+
+  function rrShape(w, h, r) {
+    const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0);
+    s.lineTo(x + w, y + h - r); s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+    s.lineTo(x + r, y + h); s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+    s.lineTo(x, y + r); s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
+    return s;
+  }
+  // rounded slab centred on z = 0, total thickness t, rounded edges of size b
+  function slab(w, h, r, t, b) {
+    const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, Math.max(0.002, r - b)),
+      { depth: t - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 6, curveSegments: 32 });
+    g.translate(0, 0, -(t - 2 * b) / 2);
+    return g;
+  }
+  const phys = ({ clearcoat, clearcoatRoughness, ...o }) => new THREE.MeshStandardMaterial(o);
+  function canvasTex(c) {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso;
+    return t;
+  }
+  function loadImg(src) { return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+
+  /* iPhone (proportions of a current Pro: 71.9 × 150 × 8.25 mm; width = 1) */
+  const PW = 1, PH = 2.083, PT = 0.118, PR = 0.17;
+  // Dark Cherry, the iPhone 18 Pro finish: wine red with a hint of purple
+  const titanium = phys({ color: 0x5c1626, metalness: 1, roughness: 0.32, envMapIntensity: 0.9 });
+  const glassBlack = phys({ color: 0x030304, metalness: 0.2, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 });
+  const backGlass = phys({ color: 0x3e0f1a, metalness: 0.3, roughness: 0.55, clearcoat: 0.5, clearcoatRoughness: 0.45 });
+  const lensGlass = phys({ color: 0x05060a, metalness: 0.4, roughness: 0.08, clearcoat: 1 });
+  const phoneScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
+
+  const phonePivot = new THREE.Group();          // hinge at the bottom edge
+  const phone = new THREE.Group();
+  phone.position.y = PH / 2;
+  phonePivot.add(phone);
+  devScene.add(phonePivot);
+  phone.add(new THREE.Mesh(slab(PW, PH, PR, PT, 0.03), [glassBlack, titanium]));
+  const SW = 0.93, SH = SW * 1688 / 780;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), phoneScreenMat);
+  screen.position.z = PT / 2 + 0.001;
+  phone.add(screen);
+  const back = new THREE.Mesh(new THREE.ShapeGeometry(rrShape(PW - 0.05, PH - 0.05, PR - 0.025), 32), backGlass);
+  back.rotation.y = Math.PI; back.position.z = -PT / 2 - 0.001;
+  phone.add(back);
+  // camera plateau: top-left seen from the back
+  const cam = new THREE.Group();
+  cam.position.set(PW / 2 - 0.27, PH / 2 - 0.27, -PT / 2);
+  const plateau = new THREE.Mesh(slab(0.44, 0.44, 0.11, 0.028, 0.012), backGlass);
+  plateau.position.z = -0.012;
+  cam.add(plateau);
+  const ringGeo = new THREE.CylinderGeometry(0.078, 0.078, 0.03, 40).rotateX(Math.PI / 2);
+  const lensGeo = new THREE.CylinderGeometry(0.058, 0.058, 0.032, 40).rotateX(Math.PI / 2);
+  [[0.09, 0.09], [0.09, -0.09], [-0.09, 0]].forEach(([x, y]) => {
+    const ring = new THREE.Mesh(ringGeo, titanium); ring.position.set(x, y, -0.035); cam.add(ring);
+    const lens = new THREE.Mesh(lensGeo, lensGlass); lens.position.set(x, y, -0.037); cam.add(lens);
+  });
+  phone.add(cam);
+  const keyGeo = new THREE.BoxGeometry(0.022, 1, 0.05);
+  [[-1, 0.62, 0.09], [-1, 0.4, 0.2], [-1, 0.14, 0.2], [1, 0.42, 0.3], [1, -0.18, 0.17]].forEach(([side, y, h]) => {
+    const k = new THREE.Mesh(keyGeo, titanium);
+    k.scale.y = h; k.position.set(side * (PW / 2 - 0.004), y, 0);
+    phone.add(k);
+  });
+
+  /* MacBook (base width = 1) */
+  const BW = 1, BD = 0.69, BT = 0.034, LH = 0.655, LT = 0.018;
+  // Midnight, the darkest MacBook Air finish: near-black with a blue cast that sits in Wasl's night palette
+  const alu = phys({ color: 0x2c3442, metalness: 1, roughness: 0.36, envMapIntensity: 0.9 });
+  const deckMat = phys({ color: 0xffffff, metalness: 0, roughness: 0.75, transparent: true });   // body colour shows between the keys
+  const padMat = phys({ color: 0x252b36, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
+  const macScreenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, alphaTest: 0.5 });
+
+  const mac = new THREE.Group();
+  devScene.add(mac);
+  const baseGeo = slab(BW, BD, 0.05, BT, 0.012).rotateX(-Math.PI / 2).translate(0, BT / 2, 0);
+  mac.add(new THREE.Mesh(baseGeo, alu));
+  // keyboard (drawn) and trackpad
+  const kb = document.createElement('canvas'); kb.width = 1024; kb.height = 380;
+  {
+    const g = kb.getContext('2d');
+    g.clearRect(0, 0, 1024, 380);   // body colour shows between the black keys
+    const rows = [14, 14, 14, 13, 12], kh = 380 / 6.2;
+    rows.forEach((n, r) => {
+      const kw = 1024 / n;
+      for (let i = 0; i < n; i++) { g.fillStyle = '#08090c'; g.beginPath(); g.roundRect(i * kw + 5, r * kh * 1.2 + 10, kw - 10, kh - 6, 8); g.fill(); }
+    });
+    g.fillStyle = '#08090c'; g.beginPath(); g.roundRect(300, 5 * kh * 1.2 + 4, 424, kh - 18, 8); g.fill();
+  }
+  deckMat.map = canvasTex(kb);
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.31).rotateX(-Math.PI / 2), deckMat);
+  deck.position.set(0, BT + 0.0015, -0.13);
+  mac.add(deck);
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.24).rotateX(-Math.PI / 2), padMat);
+  pad.position.set(0, BT + 0.0012, 0.19);
+  mac.add(pad);
+  // lid on a hinge at the back edge; closed = lying on the base, screen down
+  const lidPivot = new THREE.Group();
+  lidPivot.position.set(0, BT, -BD / 2 + 0.012);
+  mac.add(lidPivot);
+  const lidGeo = slab(BW, LH, 0.045, LT, 0.006).translate(0, LH / 2, -LT / 2);
+  lidPivot.add(new THREE.Mesh(lidGeo, alu));
+  const macScreen = new THREE.Mesh(new THREE.PlaneGeometry(BW - 0.01, LH - 0.01), macScreenMat);
+  macScreen.position.set(0, LH / 2, 0.0008);
+  lidPivot.add(macScreen);
+
+  // screen contents
+  const macCanvas = document.createElement('canvas'); macCanvas.width = 1600; macCanvas.height = Math.round(1600 * (LH - 0.01) / (BW - 0.01));
+  let waslImg = null, macDict = I18N[lang] || I18N.en;
+  function drawMacScreen() {
+    const c = macCanvas, g = c.getContext('2d'), W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0a0b0d'; g.beginPath(); g.roundRect(0, 0, W, H, [60, 60, 8, 8]); g.fill();
+    const bx = 28, by = 30, bw = W - 56, bh = H - 30 - 52;
+    g.save(); g.beginPath(); g.roundRect(bx, by, bw, bh, [26, 26, 2, 2]); g.clip();
+    let gr = g.createLinearGradient(bx, by, bx + bw, by + bh); gr.addColorStop(0, '#10182b'); gr.addColorStop(1, '#0a0e18');
+    g.fillStyle = gr; g.fillRect(bx, by, bw, bh);
+    [[0.18, 1.1, 0.75, '29,59,115'], [0.92, 0, 0.6, '58,42,85']].forEach(([x, y, r, rgb]) => {
+      const rg = g.createRadialGradient(bx + bw * x, by + bh * y, 0, bx + bw * x, by + bh * y, bw * r);
+      rg.addColorStop(0, `rgba(${rgb},1)`); rg.addColorStop(1, `rgba(${rgb},0)`);
+      g.fillStyle = rg; g.fillRect(bx, by, bw, bh);
+    });
+    // menu bar
+    const mb = bh * 0.045;
+    g.fillStyle = 'rgba(20,22,30,.5)'; g.fillRect(bx, by, bw, mb);
+    g.textBaseline = 'middle'; g.fillStyle = 'rgba(255,255,255,.9)';
+    let x = bx + 30; const my = by + mb / 2, fs = mb * 0.56;
+    g.beginPath(); g.arc(x + fs * 0.35, my, fs * 0.36, 0, Math.PI * 2); g.fill(); x += fs * 1.6;
+    g.font = `600 ${fs}px Inter, system-ui, sans-serif`; g.fillText('Wasl', x, my); x += g.measureText('Wasl').width + fs * 1.4;
+    g.font = `400 ${fs}px Inter, system-ui, sans-serif`;
+    ['mac.file', 'mac.edit', 'mac.view', 'mac.window'].forEach(k => { g.fillText(macDict[k], x, my); x += g.measureText(macDict[k]).width + fs * 1.3; });
+    g.textAlign = 'right'; g.fillText(macDict['mac.time'], bx + bw - 30, my); g.textAlign = 'left';
+    // app window
+    const ww = bw * 0.8, wx = bx + (bw - ww) / 2, wy = by + bh * 0.1, tb = ww * 0.03, ih = ww * 1400 / 2200;
+    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 50; g.shadowOffsetY = 18;
+    g.fillStyle = '#16191f'; g.beginPath(); g.roundRect(wx, wy, ww, tb + ih, 16); g.fill(); g.restore();
+    g.save(); g.beginPath(); g.roundRect(wx, wy, ww, tb + ih, 16); g.clip();
+    g.fillStyle = '#1c2027'; g.fillRect(wx, wy, ww, tb);
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => { g.fillStyle = col; g.beginPath(); g.arc(wx + tb * (0.8 + i * 0.7), wy + tb / 2, tb * 0.22, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = 'rgba(255,255,255,.5)'; g.font = `500 ${tb * 0.42}px Inter, system-ui, sans-serif`; g.textAlign = 'center';
+    g.fillText('Wasl', wx + ww / 2, wy + tb / 2); g.textAlign = 'left';
+    if (waslImg) g.drawImage(waslImg, wx, wy + tb, ww, ih);
+    g.restore();
+    // dock
+    const dw = bw * 0.26, dh = bh * 0.07, dx = bx + (bw - dw) / 2, dy = by + bh - dh - bh * 0.02;
+    g.fillStyle = 'rgba(255,255,255,.14)'; g.beginPath(); g.roundRect(dx, dy, dw, dh, dh * 0.3); g.fill();
+    for (let i = 0; i < 5; i++) {
+      const s = dh * 0.72, ix = dx + dw * (i + 0.5) / 5 - s / 2, iy = dy + (dh - s) / 2;
+      const ig = g.createLinearGradient(ix, iy, ix + s, iy + s);
+      ig.addColorStop(0, i === 2 ? '#5b8cff' : '#4b5566'); ig.addColorStop(1, i === 2 ? '#2c4fa8' : '#262c36');
+      g.fillStyle = ig; g.beginPath(); g.roundRect(ix, iy, s, s, s * 0.24); g.fill();
+    }
+    g.restore();
+    // notch
+    g.fillStyle = '#0a0b0d'; g.beginPath(); g.roundRect(W / 2 - W * 0.07, by - 2, W * 0.14, mb * 1.05, [0, 0, 14, 14]); g.fill();
+    if (macScreenMat.map) macScreenMat.map.needsUpdate = true;
+    else { macScreenMat.map = canvasTex(macCanvas); macScreenMat.needsUpdate = true; }
+  }
+  langHooks.push(d => { macDict = d; drawMacScreen(); });
+  drawMacScreen();
+  document.fonts?.ready.then(drawMacScreen);
+  loadImg('assets/wasl-home.webp').then(img => { waslImg = img; drawMacScreen(); warmUp(); });
+  // compile every device shader and upload every texture up front, so the first entrance doesn't hitch
+  function warmUp() {
+    const pv = phonePivot.visible, mv = mac.visible;
+    phonePivot.visible = mac.visible = true;
+    renderer.compile(devScene, devCam);
+    [phoneScreenMat.map, macScreenMat.map, deckMat.map].forEach(t => t && renderer.initTexture(t));
+    phonePivot.visible = pv; mac.visible = mv;
+  }
+  warmUp();
+  // Qayd and Zapis share one iPhone; its screen is swapped while it is out of frame
+  const phoneTex = {};
+  let wantedScreen = 'zapis';
+  function makePhoneTex(img) {
+    const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.beginPath(); g.roundRect(0, 0, w, h, w * 0.14); g.clip();
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+    const iw = w * 0.31, ih = w * 0.092, iy = w * 0.03;   // Dynamic Island
+    g.fillStyle = '#000'; g.beginPath(); g.roundRect((w - iw) / 2, iy, iw, ih, ih / 2); g.fill();
+    g.fillStyle = '#121624'; g.beginPath(); g.arc((w + iw) / 2 - ih * 0.55, iy + ih / 2, ih * 0.2, 0, Math.PI * 2); g.fill();
+    return canvasTex(c);
+  }
+  function setPhoneScreen(key) {
+    wantedScreen = key;
+    const tex = phoneTex[key];
+    if (!tex || phoneScreenMat.map === tex) return;
+    const first = !phoneScreenMat.map;
+    phoneScreenMat.map = tex;
+    if (first) phoneScreenMat.needsUpdate = true;
+  }
+  [['zapis', 'assets/zapis-home.webp'], ['qayd', 'assets/qayd-home.webp']].forEach(([key, src]) => loadImg(src).then(img => {
+    if (!img) return;
+    phoneTex[key] = makePhoneTex(img);
+    renderer.initTexture(phoneTex[key]);
+    setPhoneScreen(phoneTex[wantedScreen] ? wantedScreen : key);
+    warmUp();
+  }));
+
+  function placeDevices(s) {
+    const wpp = 2 * DEV_D * Math.tan(THREE.MathUtils.degToRad(15)) / H;   // world units per CSS pixel
+    // each model sits at the origin and the lens is shifted onto its box, so it is always seen head-on
+    const lookAt = r => devCam.setViewOffset(W, H, W / 2 - (r.left + r.width / 2), H / 2 - (r.top + r.height / 2), W, H);
+
+    // iPhone: rises straight up leaning slightly towards the viewer, leaves leaning back, always fully out of frame
+    const P = s.phone, R = P && P.rect;
+    phonePivot.visible = !!R && R.width > 0 && P.a < 0.999;
+    if (phonePivot.visible) {
+      const wpx = Math.min(R.width, R.height / PH), hpx = wpx * PH;
+      phonePivot.scale.setScalar(wpx * wpp);
+      const top = R.top + R.height / 2 - hpx / 2;
+      const out = (H - top + 140) * wpp;   // margin covers the lean and perspective
+      phonePivot.position.set(0, -hpx / 2 * wpp - P.a * out, 0);
+      phonePivot.rotation.set(P.dir * 0.42 * P.a, 0, 0);
+    }
+
+    // MacBook: the body stays level; leaving, the lid closes and then the laptop slides away; arriving is the reverse
+    const Mc = s.mac, B = Mc && Mc.rect;
+    mac.visible = !!B && B.width > 0 && Mc.a < 0.999;
+    if (mac.visible) {
+      const kpx = Math.min(B.width * 0.86, B.height * 1.08), k = kpx * wpp;
+      mac.scale.setScalar(k);
+      const lidT = smooth(0, 0.45, Mc.a), outT = smooth(0.3, 1, Mc.a);
+      const top = B.top + B.height / 2 - 0.45 * kpx;
+      const out = (H - top + 80) * wpp;
+      mac.position.set(0, -0.34 * k - outT * out, 0);
+      mac.rotation.set(0.3, 0, 0);
+      lidPivot.rotation.x = THREE.MathUtils.lerp(-0.2, Math.PI / 2 - 0.004, lidT);
+    }
+    devKey.color.copy(key.color); devRim.color.copy(rim.color);
+    return { lookAt, R, M: B };
+  }
+
+  let W = 1, H = 1;
+  function resize(w, h) {
+    W = w; H = h;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    devCam.aspect = w / h; devCam.updateProjectionMatrix();
+    const bw = Math.max(1, Math.round(w * renderer.getPixelRatio() * 0.5)), bh = Math.max(1, Math.round(h * renderer.getPixelRatio() * 0.5));
+    bgRT.setSize(bw, bh);
+    bgMat.uniforms.uRes.value.set(bw, bh);
+    pMat.uniforms.uPR.value = renderer.getPixelRatio();
+  }
+
+  const origin = new THREE.Vector3(), proj = new THREE.Vector3(), glowAt = new THREE.Vector2();
+  const mTmp = new THREE.Color();
+  function render(s) {
+    const [i, t] = stageMix(s.p);
+    const split = smooth(0.46, 0.6, s.p) * (1 - smooth(0.74, 0.9, s.p));
+
+    // camera orbit + subtle pointer tilt
+    const ang = mixN(CAM.ang, i, t) + s.mx * 0.06;
+    const r = mixN(CAM.rad, i, t) * (isMobile ? 2.5 : 1);
+    const h = mixN(CAM.hgt, i, t) - s.my * 0.2;
+    camera.position.set(Math.sin(ang) * r, h, Math.cos(ang) * r);
+    camera.lookAt(origin);
+    const sx = isMobile ? 0 : mixN(CAM.shx, i, t);
+    const away = s.away;
+    const sy = (isMobile ? mixN(CAM.shyM, i, t) : mixN(CAM.shy, i, t)) + away * 0.85;
+    camera.setViewOffset(W, H, -sx * W, sy * H, W, H);
+
+    // sculpture: slow drift, Wasl split and reconnect
+    // follow the orbit partially so the monogram never turns edge-on
+    sculpture.rotation.y = ang * 0.62 + (reduce ? 0 : Math.sin(s.time * 0.12) * 0.12) + s.mx * 0.1;
+    sculpture.rotation.x = s.my * 0.05;
+    sculpture.position.y = reduce ? 0 : Math.sin(s.time * 0.4) * 0.035;
+    if (parts.a && parts.v) {
+      parts.a.position.set(-split * 0.52, split * 0.05, split * 0.12);
+      parts.v.position.set(split * 0.52, -split * 0.05, -split * 0.12);
+      parts.a.rotation.set(0, split * 0.32, split * 0.07);
+      parts.v.rotation.set(0, -split * 0.32, -split * 0.07);
+    }
+
+    // material + light progression
+    metal.color.copy(mixC(PAL.metal, i, t, mTmp));
+    metal.roughness = mixN(CAM.rough, i, t);
+    metal.envMapIntensity = mixN(CAM.env, i, t);
+    key.color.copy(mixC(PAL.key, i, t)); key.intensity = mixN(CAM.keyI, i, t);
+    rim.color.copy(mixC(PAL.rim, i, t)); rim.intensity = mixN(CAM.rimI, i, t);
+    low.color.copy(rim.color);
+
+    // background
+    const u = bgMat.uniforms;
+    u.uTime.value = s.time * (reduce ? 0.25 : 1);
+    setVecSRGB(u.uBase.value, mixC(PAL.bgBase, i, t));
+    setVecSRGB(u.uTint.value, mixC(PAL.bgTint, i, t));
+    setVecSRGB(u.uHi.value, mixC(PAL.bgHi, i, t));
+    camera.updateMatrixWorld();
+    proj.copy(origin).project(camera);
+    u.uGlow.value.set(proj.x * 0.5 + 0.5, proj.y * 0.5 + 0.5);
+    // the light stays behind the device while the sculpture is away
+    u.uGlow.value.lerp(glowAt.set(isMobile ? 0.5 : 0.72, isMobile ? 0.66 : 0.5), away);
+    u.uDim.value = away * 0.32;
+
+    // particles
+    const pu = pMat.uniforms;
+    pu.uTime.value = s.time;
+    pu.uPhase.value = s.phase;
+    pu.uFlow.value = split;
+    pu.uOpacity.value = (reduce ? 0.25 : 0.32) + s.energy * 0.45;
+    setVecSRGB(pu.uColor.value, mixC(PAL.part, i, t));
+
+    renderer.setRenderTarget(bgRT);
+    renderer.clear();
+    renderer.render(bgScene, bgCam);
+    renderer.setRenderTarget(null);
+    renderer.clear();
+    renderer.render(blitScene, bgCam);
+    sculpture.visible = s.away < 0.999;
+    renderer.render(scene, camera);
+    const { lookAt, R, M } = placeDevices(s);
+    const showPhone = phonePivot.visible, showMac = mac.visible;
+    if (showPhone || showMac) renderer.clearDepth();
+    // one pass per device, each with the lens centred on it, so neither is ever seen from the side
+    if (showPhone) { mac.visible = false; lookAt(R); renderer.render(devScene, devCam); mac.visible = showMac; }
+    if (showMac) { phonePivot.visible = false; lookAt(M); renderer.render(devScene, devCam); phonePivot.visible = showPhone; }
+  }
+
+  return { resize, render, setPhoneScreen };
+}
+
+
+let gl = null;
+try { gl = createGL(); } catch (err) { console.warn('WebGL init failed', err); gl = null; }
+if (!gl) root.classList.add('no-webgl');
+else root.classList.add('gl-devices');
+
+/* ---------- resize ---------- */
+let lastW = 0, lastH = 0;
+function onResize() {
+  isMobile = mqMobile.matches;
+  // the canvas is 100lvh tall: it keeps its size while the mobile toolbar slides in and out
+  const w = innerWidth, h = document.getElementById('gl').clientHeight || innerHeight;
+  // mobile browsers resize on toolbar show/hide; ignore small height-only changes
+  if (w === lastW && Math.abs(h - lastH) < 120 && lastW) return;
+  lastW = w; lastH = h;
+  gl?.resize(w, h);
+}
+addEventListener('resize', onResize);
+mqMobile.addEventListener('change', onResize);
+onResize();
+
+/* ---------- sections drive the scene ----------
+   Each section names its palette (data-theme) and whether the monogram stays (data-away).
+   Showcases pin to the screen; while pinned, their device travels into frame, and out when the pin ends.
+   All of it is time-based (GSAP), so nothing ever stops half way when the scroll stops. */
+const sections = $$('main > section').map(el => ({
+  el, id: el.id, theme: +el.dataset.theme / 3, away: +el.dataset.away,
+  device: el.dataset.device || null, screen: el.dataset.screen || null, box: $('.device-box', el),
+}));
+/* ---------- portfolio videos: the player is created on tap, so no video layers exist while scrolling ---------- */
+document.querySelectorAll('.v-play').forEach(btn => btn.addEventListener('click', () => {
+  const img = btn.querySelector('img');
+  const v = document.createElement('video');
+  Object.assign(v, { src: btn.dataset.video, controls: true, playsInline: true, autoplay: true, poster: img.src });
+  v.width = img.width; v.height = img.height;
+  btn.replaceWith(v);
+  v.play().catch(() => {});
+}));
+const NAV_OF = { dirs: 'dev', dev: 'dev', zapis: 'dev', 'zapis-more': 'dev', qayd: 'dev', wasl: 'dev', design: 'design', video: 'video', services: 'services', process: 'services', contact: 'contact' };
+const look = { p: 0, away: 0 };
+const phone = { a: 1, dir: 1, owner: null, want: null, tl: null };
+const mac = { a: 1, want: false, tl: null };
+let active = null;
+
+function setActive(sec) {
+  active = sec;
+  gsap.to(look, { p: sec.theme, away: sec.away, duration: 1.6, ease: 'sine.inOut', overwrite: 'auto' });
+  $$('.nav a').forEach(a => a.classList.toggle('is-active', a.dataset.nav === NAV_OF[sec.id]));
+  $('[data-split]', sec.el)?.classList.add('is-in');
+}
+function runPhone(want) {
+  phone.want = want;
+  phone.tl?.kill();
+  const tl = gsap.timeline();
+  if (phone.owner && phone.owner !== want && phone.a < 0.999) {
+    if (phone.a < 0.001) phone.dir = -1;          // standing: leave leaning back
+    tl.to(phone, { a: 1, duration: 1.1, ease: 'sine.in' });
+  }
+  if (want) {
+    tl.add(() => {
+      if (phone.owner !== want) { phone.owner = want; gl?.setPhoneScreen(want); }
+      if (phone.a > 0.999) phone.dir = 1;           // out of frame: rise leaning forward
+    });
+    tl.to(phone, { a: 0, duration: 1.4, ease: 'sine.out' });
+  } else if (phone.a < 0.999) {
+    if (phone.a < 0.001) phone.dir = -1;
+    tl.to(phone, { a: 1, duration: 1.1, ease: 'sine.in' });
+  }
+  phone.tl = tl;
+}
+function runMac(want) {
+  mac.want = want;
+  mac.tl?.kill();
+  // arriving: rises closed, then opens; leaving: closes, then slides away (see placeDevices)
+  mac.tl = gsap.to(mac, { a: want ? 0 : 1, duration: want ? 2.4 : 2, ease: 'sine.inOut' });
+}
+
+/* ---------- main loop ---------- */
+const state = { p: 0, away: 0, time: 0, phase: 0, energy: 0, mx: 0, my: 0, phone: null, mac: null };
+let last = performance.now(), lastY = scrollY, vel = 0, accentHex = '', firstFrame = true;
+const accTmp = new THREE.Color();
+
+function tick(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  state.time += dt;
+  const H = innerHeight;
+
+  // read layout first (no style writes before this point)
+  const rects = sections.map(s => s.el.getBoundingClientRect());
+  let cur = null;
+  sections.forEach((s, i) => { if (!cur && rects[i].top <= H * 0.5 && rects[i].bottom > H * 0.5) cur = s; });
+  const pinned = (s, r) => s.device && r.top <= H * 0.25 && r.bottom >= H * 0.75;
+  const wantPhone = sections.find((s, i) => s.device === 'phone' && pinned(s, rects[i]))?.screen || null;
+  const wantMac = sections.some((s, i) => s.device === 'mac' && pinned(s, rects[i]));
+  const ownerBox = phone.owner ? sections.find(s => s.screen === phone.owner).box : null;
+  const phoneRect = ownerBox && phone.a < 0.999 ? ownerBox.getBoundingClientRect() : null;
+  const macBox = sections.find(s => s.device === 'mac').box;
+  const macRect = mac.a < 0.999 ? macBox.getBoundingClientRect() : null;
+
+  if (cur && cur !== active) setActive(cur);
+  if (wantPhone !== phone.want) runPhone(wantPhone);
+  if (wantMac !== mac.want) runMac(wantMac);
+
+  // scroll speed feeds the particles
+  const dy = Math.abs(scrollY - lastY); lastY = scrollY;
+  vel += (Math.min(1, dy / Math.max(dt, 1e-3) / 3000) - vel) * (1 - Math.pow(0.02, dt));
+  state.energy = vel;
+  state.phase += dt * (reduce ? 0.2 : 1 + state.energy * 4);
+  const mk = reduce ? 1 : 1 - Math.pow(0.02, dt);
+  mx += ((reduce ? 0 : tmx) - mx) * mk;
+  my += ((reduce ? 0 : tmy) - my) * mk;
+  state.mx = mx; state.my = my;
+  state.p = look.p; state.away = look.away;
+  state.phone = { rect: phoneRect, a: phone.a, dir: phone.dir };
+  state.mac = { rect: macRect, a: mac.a };
+
+  root.classList.toggle('is-scrolled', scrollY > 8);
+  const [i, t] = stageMix(look.p);
+  const h = '#' + mixC(PAL.accent, i, t, accTmp).getHexString();
+  if (h !== accentHex) { accentHex = h; root.style.setProperty('--accent', h); }
+
+  if (document.body.classList.contains('has-cursor')) {
+    const rk = 1 - Math.pow(0.0008, dt);
+    rx += (px - rx) * rk; ry += (py - ry) * rk;
+    ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+  }
+
+  if (gl) {
+    gl.render(state);
+    if (firstFrame) { firstFrame = false; root.classList.add('gl-ready'); }
+  }
+  requestAnimationFrame(tick);
+}
+
+(document.fonts?.ready || Promise.resolve()).then(() => {
+  $('#t-hero')?.classList.add('is-in');
+  requestAnimationFrame(() => requestAnimationFrame(tick));
+});
+</script>
+<script>
+  // offline cache for the page, Three.js, fonts and screenshots (sw.js); the page itself is always checked for updates
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
