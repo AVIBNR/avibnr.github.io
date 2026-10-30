@@ -19,6 +19,18 @@
   --shadow:0 1px 2px rgba(15,18,23,.04),0 12px 32px -16px rgba(15,18,23,.18);
   --shadow-lg:0 2px 4px rgba(15,18,23,.04),0 40px 80px -36px rgba(15,18,23,.45);
 }
+/* dark mode follows the device: the same layout, the page becomes the night and the objects stay a step lighter */
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0E1115;--surf:#161A20;--surf2:#1E232B;
+    --fg:#EEF0F3;--fg2:#B4BAC3;--mute:#8A929E;
+    --line:rgba(238,240,243,.08);--line2:rgba(238,240,243,.16);
+    --night:#1A1F27;--night2:#20262F;--night3:#2A313B;--night4:#353D48;
+    --brd:#C9AC88;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
+    --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 40px 80px -36px rgba(0,0,0,.85);
+  }
+}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;scroll-padding-top:80px}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.55 var(--fb);overflow-x:clip}
@@ -398,4 +410,17 @@ svg{width:1em;height:1em;flex:none}
   .rv,.sec-head h2.rv{opacity:1;transform:none;clip-path:none}
   .steps::after{transform:none}
   .marquee-track{animation:none}
+}
+
+/* dark mode: component tweaks placed last so they win over the base rules above */
+@media (prefers-color-scheme:dark){
+  .bar{background:rgba(14,17,21,.78)}
+  .bar.scrolled{background:rgba(14,17,21,.9)}
+  .btn-main,.bar-cta,.fab,.sheet a:first-of-type{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  @media (hover:hover) and (pointer:fine){.btn-main:hover,.bar-cta:hover{background:#fff}}
+  .play{background:rgba(238,240,243,.95)}
+  .contact{background:#151A21}
+  .foot{background:#151A21}
+  .tier.pick{background:var(--night3);border-color:var(--br)}
+  .editor{box-shadow:0 0 0 1px var(--nline2),var(--shadow-lg)}
 }

@@ -4,7 +4,7 @@ import os
 SITE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 B = '/v2/'  # page links; static files always live in /v2/
 ROBOTS = ''
-V = '12'
+V = '14'
 I = '/v2/icons.svg'
 A = '/assets'
 
@@ -34,8 +34,8 @@ def head(title, desc, page):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F3F4F6">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3F4F6"><meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1115">
+<meta name="color-scheme" content="light dark">
 {ROBOTS}
 <title>{title}</title>
 <meta name="description" content="{desc}">
@@ -163,10 +163,10 @@ def editor():
 '''
 
 
-FAN = [('zapis-home.webp', 'Zapis', 'онлайн-запись в автосервис'),
+FAN = [('zapis-home.webp', 'Онлайн-запись', 'страница автосервиса'),
        ('qayd-home.webp', 'Qayd', 'учёт для магазина в Telegram'),
-       ('zapis-book.webp', 'Zapis', 'выбор свободного времени'),
-       ('zapis-admin.webp', 'Zapis', 'записи у владельца')]
+       ('zapis-book.webp', 'Онлайн-запись', 'выбор свободного времени'),
+       ('zapis-admin.webp', 'Онлайн-запись', 'записи у владельца')]
 
 
 def fan():
@@ -361,7 +361,7 @@ def montazh():
 
 
 PROJECTS = [
-    ('Готовое решение для автосервисов', 'Онлайн-запись Zapis',
+    ('Для автосервисов и шиномонтажей', 'Онлайн-запись клиентов',
      'Клиент открывает ссылку, выбирает услугу и время и записывается сам, без звонка. Все записи у владельца в телефоне.',
      ['Страница сервиса с ценами, адресом и кнопкой звонка', 'Свободное время считается само', 'Уведомление о каждой новой записи', 'Работает в браузере, скачивать ничего не нужно'],
      '<p class="pprice">5 000 ₽ один раз<small>первая неделя бесплатно, без абонентской платы</small></p>',
