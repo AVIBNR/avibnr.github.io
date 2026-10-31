@@ -1,7 +1,7 @@
 /* Avibra service worker.
    - the page (HTML) is network-first: a new deploy shows up on the next visit, the cache is only an offline fallback;
    - Three.js and GSAP (assets/vendor), Google Fonts and the screenshots are cache-first and refreshed in the background. */
-const CACHE = 'avibra-v16';
+const CACHE = 'avibra-v17';
 const PRECACHE = ['./'];
 
 self.addEventListener('install', e => {
